@@ -6,10 +6,15 @@ import { useAuth } from "@/lib/auth";
 
 const NAV: { href: string; label: string; perm?: string }[] = [
   { href: "/dashboard", label: "Tableau de bord" },
+  { href: "/leave", label: "Mes congés" },
+  { href: "/leave/validate", label: "Congés à valider", perm: "hr.leave.validate" },
+  { href: "/mail", label: "Courrier", perm: "mail.view" },
+  { href: "/hr", label: "RH", perm: "hr.view" },
   { href: "/account", label: "Mon compte" },
   { href: "/admin/users", label: "Comptes", perm: "accounts.view" },
   { href: "/admin/roles", label: "Rôles & permissions", perm: "accounts.view" },
   { href: "/admin/permission-overrides", label: "Exceptions", perm: "accounts.manage_permissions" },
+  { href: "/admin/validation-flows", label: "Circuits de validation", perm: "platform.manage_validation_flows" },
   { href: "/admin/audit", label: "Journal d'audit", perm: "audit.view" },
 ];
 

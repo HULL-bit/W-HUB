@@ -56,6 +56,9 @@ LOCAL_APPS = [
     "apps.audit",
     "apps.notifications",
     "apps.dashboard",
+    "apps.validation",
+    "apps.hr",
+    "apps.correspondence",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -192,6 +195,27 @@ CELERY_RESULT_BACKEND = env("REDIS_URL", "redis://localhost:6379/0")
 CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_TIMEZONE = TIME_ZONE
+
+from celery.schedules import crontab  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = {
+    "purge-audit-log": {
+        "task": "apps.audit.tasks.purge_audit_log",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "check-contract-expirations": {
+        "task": "apps.hr.tasks.check_contract_expirations",
+        "schedule": crontab(hour=7, minute=0),
+    },
+    "check-health-record-renewals": {
+        "task": "apps.hr.tasks.check_health_record_renewals",
+        "schedule": crontab(hour=7, minute=15),
+    },
+    "remind-untreated-mail": {
+        "task": "apps.correspondence.tasks.remind_untreated_mail",
+        "schedule": crontab(hour=8, minute=0),
+    },
+}
 
 # --- E-mail ---------------------------------------------------------
 EMAIL_BACKEND = env(
