@@ -57,3 +57,29 @@ def auth(api):
         return api
 
     return _auth
+
+
+@pytest.fixture
+def rh_user(make_user):
+    return make_user("rh@wagadu.africa", "rh")
+
+
+@pytest.fixture
+def make_employee(db, make_user):
+    _counter = {"n": 0}
+
+    def _make(email=None, *, role_slug="employe", manager=None, **employee_kwargs):
+        from apps.hr.models import Employee
+
+        _counter["n"] += 1
+        n = _counter["n"]
+        user = make_user(email or f"emp{n}@wagadu.africa", role_slug, manager=manager)
+        return Employee.objects.create(
+            user=user,
+            matricule=employee_kwargs.pop("matricule", f"WAG-{n:04d}"),
+            hire_date=employee_kwargs.pop("hire_date", "2024-01-15"),
+            **employee_kwargs,
+        )
+
+    return _make
+

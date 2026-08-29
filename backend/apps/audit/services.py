@@ -149,6 +149,12 @@ AUTO_TRACKED_MODELS: set[str] = set(
             "permissions.Role",
             "permissions.RolePermission",
             "permissions.UserPermissionOverride",
+            "hr.Employee",
+            "hr.Contract",
+            "hr.LeaveRequest",
+            "validation.ValidationFlow",
+            "validation.ValidationStep",
+            "correspondence.Mail",
         },
     )
 )

@@ -12,6 +12,9 @@ interface Dashboard {
   widgets: {
     administration?: { users_total: number; users_active: number; users_locked: number };
     audit?: { entries_total: number; critical_recent: number };
+    hr?: { headcount: number; pending_leave: number; contracts_expiring: number };
+    my_mail?: number;
+    my_leave_pending?: number;
   };
 }
 
@@ -59,6 +62,27 @@ export default function DashboardPage() {
                 <p className="text-sm text-wagadu-terracotta">
                   {data.widgets.audit.critical_recent} critique(s)
                 </p>
+              </div>
+            )}
+            {data.widgets.hr && (
+              <div className="card">
+                <p className="label">RH</p>
+                <p className="font-display text-3xl text-wagadu-brown">{data.widgets.hr.headcount}</p>
+                <p className="text-sm text-wagadu-terracotta">
+                  {data.widgets.hr.pending_leave} congé(s) à valider · {data.widgets.hr.contracts_expiring} contrat(s) &lt; 60 j
+                </p>
+              </div>
+            )}
+            {!!data.widgets.my_mail && (
+              <div className="card">
+                <p className="label">Courrier qui m'est affecté</p>
+                <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_mail}</p>
+              </div>
+            )}
+            {!!data.widgets.my_leave_pending && (
+              <div className="card">
+                <p className="label">Mes demandes de congé en cours</p>
+                <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_leave_pending}</p>
               </div>
             )}
           </section>

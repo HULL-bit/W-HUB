@@ -1,6 +1,93 @@
 # Schéma de la base de données
 
-État après la **Phase 1**. Le schéma s'enrichit à chaque phase.
+État après la **Phase 2**. Le schéma s'enrichit à chaque phase.
+
+## Diagramme (Phase 2 — RH, Courrier, validation)
+
+```mermaid
+erDiagram
+    USER ||--o| EMPLOYEE : ""
+    EMPLOYEE ||--o{ CONTRACT : ""
+    EMPLOYEE ||--o{ EMPLOYEE_DOCUMENT : ""
+    EMPLOYEE ||--o{ CAREER_EVENT : ""
+    EMPLOYEE ||--o{ HEALTH_RECORD : ""
+    EMPLOYEE ||--o{ LEAVE_BALANCE : ""
+    EMPLOYEE ||--o{ LEAVE_REQUEST : ""
+    LEAVE_TYPE ||--o{ LEAVE_BALANCE : ""
+    LEAVE_TYPE ||--o{ LEAVE_REQUEST : ""
+    LEAVE_REQUEST ||--o| APPROVAL_PROCESS : "GFK"
+    VALIDATION_FLOW ||--o{ VALIDATION_STEP : ""
+    VALIDATION_FLOW ||--o{ APPROVAL_PROCESS : ""
+    APPROVAL_PROCESS ||--o{ APPROVAL_DECISION : ""
+    VALIDATION_STEP ||--o{ APPROVAL_DECISION : ""
+    MAIL ||--o{ MAIL_ATTACHMENT : ""
+    MAIL ||--o{ MAIL_EVENT : ""
+    MAIL ||--o{ MAIL_ACKNOWLEDGEMENT : ""
+    MAIL_CATEGORY ||--o{ MAIL : ""
+    NUMBERING_SCHEME ||--o{ MAIL : "référence"
+
+    EMPLOYEE {
+        int id PK
+        uuid user_id FK
+        string matricule UK
+        string job_title
+        date hire_date
+        string employment_type
+        string hr_status
+    }
+    LEAVE_REQUEST {
+        int id PK
+        int employee_id FK
+        int leave_type_id FK
+        date start_date
+        date end_date
+        decimal working_days
+        string status
+    }
+    APPROVAL_PROCESS {
+        int id PK
+        int flow_id FK
+        string content_type
+        string object_id
+        uuid subject_user_id FK
+        string status
+        int current_step_id FK
+    }
+    VALIDATION_STEP {
+        int id PK
+        int flow_id FK
+        int order
+        string approver_type "manager|role|user"
+        int approver_role_id FK
+        uuid approver_user_id FK
+    }
+    MAIL {
+        int id PK
+        string reference UK
+        string direction "incoming|outgoing"
+        string subject
+        string correspondent
+        date mail_date
+        string status
+        string confidentiality
+        uuid assigned_to_id FK
+        int assigned_department_id FK
+        date due_date
+    }
+```
+
+### Circuit de validation (moteur générique)
+
+`start_approval(objet, flow_code)` crée un `ApprovalProcess` lié par
+GenericForeignKey. Chaque `submit_decision` :
+- `approved` → étape suivante résolvable, ou état `approved` si dernière ;
+- `rejected` → `ApprovalProcess.status = rejected` ;
+- `returned` → `cancelled` (retour brouillon côté objet).
+À l'état terminal, le moteur appelle le hook correspondant sur l'objet
+(`on_approval_approved` / `_rejected` / `_returned`). Pour les congés,
+`on_approval_approved` décompte les jours du `LeaveBalance`.
+
+## Diagramme (Phase 1)
 
 ## Diagramme (Phase 1)
 
@@ -128,7 +215,10 @@ Implémentation : `backend/apps/permissions/services.py`
 ```
 accounts/0001_initial, 0002_initial
 organization/0001_initial
-permissions/0001_initial, 0002_seed_catalog   # catalogue de permissions + rôles système
+permissions/0001_initial, 0002_seed_catalog, 0003_phase2_catalog
 audit/0001_initial
 notifications/0001_initial
+validation/0001_initial, 0002_seed_leave_flow
+hr/0001_initial, 0002_seed_leave_types_holidays
+correspondence/0001_initial
 ```
