@@ -1,0 +1,100 @@
+name: wagadu-hub
+
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - backend_static:/var/www/static:ro
+    depends_on:
+      - backend
+      - frontend
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: wagadu.settings.prod
+    volumes:
+      - backend_static:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api/v1}
+    restart: unless-stopped
+    env_file: .env
+    command: node server.js
+    depends_on:
+      - backend
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # File d'attente Celery : notifications, rappels d'échéance, e-mails,
+    # génération de PDF, purge du journal d'audit.
+
+  celery-worker:
+    build: ../backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: wagadu.settings.prod
+    entrypoint: []
+    command: celery -A wagadu worker -l info
+    depends_on:
+      - backend
+      - redis
+
+  celery-beat:
+    build: ../backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: wagadu.settings.prod
+    entrypoint: []
+    command: celery -A wagadu beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - backend
+      - redis
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    env_file: .env
+    volumes:
+      - miniodata:/data
+    ports:
+      - "9001:9001"
+
+volumes:
+  pgdata:
+  miniodata:
+  backend_static:

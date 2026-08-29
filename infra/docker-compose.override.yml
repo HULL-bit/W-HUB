@@ -1,0 +1,41 @@
+# Surcharge de développement local : hot-reload, ports exposés, settings dev.
+# Chargé automatiquement par `docker compose` en plus de docker-compose.yml.
+services:
+  backend:
+    build: ../backend
+    environment:
+      DJANGO_SETTINGS_MODULE: wagadu.settings.dev
+      USE_SQLITE: "0"
+    volumes:
+      - ../backend:/app
+    ports:
+      - "8000:8000"
+    entrypoint: []
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  frontend:
+    build:
+      context: ../frontend
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    ports:
+      - "3000:3000"
+
+  celery-worker:
+    environment:
+      DJANGO_SETTINGS_MODULE: wagadu.settings.dev
+    volumes:
+      - ../backend:/app
+
+  celery-beat:
+    environment:
+      DJANGO_SETTINGS_MODULE: wagadu.settings.dev
+    volumes:
+      - ../backend:/app

@@ -1,0 +1,49 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth";
+
+const NAV: { href: string; label: string; perm?: string }[] = [
+  { href: "/dashboard", label: "Tableau de bord" },
+  { href: "/account", label: "Mon compte" },
+  { href: "/admin/users", label: "Comptes", perm: "accounts.view" },
+  { href: "/admin/roles", label: "Rôles & permissions", perm: "accounts.view" },
+  { href: "/admin/permission-overrides", label: "Exceptions", perm: "accounts.manage_permissions" },
+  { href: "/admin/audit", label: "Journal d'audit", perm: "audit.view" },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { me, can, logout } = useAuth();
+
+  return (
+    <aside className="w-full md:w-64 md:min-h-dvh bg-wagadu-bark text-wagadu-ivory flex md:flex-col wagadu-branches">
+      <div className="p-4 md:p-6 flex items-center gap-2 border-b border-white/10">
+        <span className="font-display text-xl">Wagadu&nbsp;Hub</span>
+      </div>
+      <nav className="flex-1 p-2 md:p-4 flex md:flex-col gap-1 overflow-x-auto">
+        {NAV.filter((n) => !n.perm || can(n.perm)).map((n) => {
+          const active = pathname === n.href || pathname.startsWith(n.href + "/");
+          return (
+            <Link key={n.href} href={n.href}
+              className={`rounded-xl px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+                active ? "bg-wagadu-gold text-wagadu-ebony font-medium" : "hover:bg-white/10"
+              }`}>
+              {n.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="p-4 border-t border-white/10 text-xs hidden md:block">
+        <p className="truncate">{me?.email}</p>
+        <p className="text-wagadu-sand/60">
+          {me?.is_super_admin ? "Super Administrateur" : me?.role_detail?.name ?? "—"}
+        </p>
+        <button onClick={logout} className="mt-2 btn-ghost text-wagadu-ivory border-white/30 w-full">
+          Se déconnecter
+        </button>
+      </div>
+    </aside>
+  );
+}
