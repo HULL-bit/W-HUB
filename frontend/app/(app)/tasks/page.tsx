@@ -1,0 +1,79 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { api } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
+import { useAuth } from "@/lib/auth";
+import { PRIORITY_STYLE, Task } from "@/lib/tasks";
+
+export default function MyTasksPage() {
+  const { me, can } = useAuth();
+  const [weekOnly, setWeekOnly] = useState(false);
+  const { data, loading, reload } = useApi<Task[]>(
+    `/tasks/mine/${weekOnly ? "?scope=week" : ""}`,
+  );
+
+  async function setProgress(id: number, progress: string) {
+    await api(`/tasks/${id}/progress/`, { method: "POST", body: { progress } });
+    reload();
+  }
+
+  function myAssignment(t: Task) {
+    return t.assignments.find((a) => a.user === me?.id);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="font-display text-2xl text-wagadu-brown">Mes tâches</h1>
+        <div className="flex gap-2">
+          <button className={weekOnly ? "btn-primary" : "btn-ghost"} onClick={() => setWeekOnly((v) => !v)}>
+            Cette semaine
+          </button>
+          {can("tasks.assign") && <Link href="/tasks/new" className="btn-primary">Nouvelle tâche</Link>}
+        </div>
+      </div>
+
+      {loading && <p className="text-sm opacity-60">Chargement…</p>}
+      {data?.length === 0 && <p className="text-sm opacity-60">Aucune tâche {weekOnly ? "cette semaine" : "en cours"}.</p>}
+
+      <div className="space-y-3">
+        {data?.map((t) => {
+          const mine = myAssignment(t);
+          return (
+            <div key={t.id} className={`card ${t.is_overdue ? "border-wagadu-terracotta" : ""}`}>
+              <div className="flex justify-between flex-wrap gap-2">
+                <Link href={`/tasks/${t.id}`} className="font-medium text-wagadu-brown">{t.title}</Link>
+                <div className="flex gap-1">
+                  <span className={`badge ${PRIORITY_STYLE[t.priority]}`}>{t.priority_display}</span>
+                  <span className="badge bg-wagadu-sand">{mine?.progress_status ?? t.status_display}</span>
+                </div>
+              </div>
+              {t.due_at && (
+                <p className={`text-sm font-mono ${t.is_overdue ? "text-wagadu-terracotta" : "opacity-70"}`}>
+                  Échéance {new Date(t.due_at).toLocaleString("fr-FR")}
+                </p>
+              )}
+              {t.labels_detail.length > 0 && (
+                <div className="flex gap-1 mt-1">
+                  {t.labels_detail.map((l) => (
+                    <span key={l.id} className="badge" style={{ background: l.color + "33" }}>{l.name}</span>
+                  ))}
+                </div>
+              )}
+              {mine && ["todo", "in_progress", "returned"].includes(mine.progress_status) && (
+                <div className="flex gap-2 mt-2">
+                  {mine.progress_status === "todo" && (
+                    <button className="btn-ghost" onClick={() => setProgress(t.id, "in_progress")}>Démarrer</button>
+                  )}
+                  <Link href={`/tasks/${t.id}`} className="btn-primary">Soumettre</Link>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

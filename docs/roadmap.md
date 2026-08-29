@@ -7,7 +7,7 @@ selon la *Definition of Done* avant de passer à la suivante.
 |---|---|---|
 | **1 — Socle technique** | Auth JWT, utilisateurs/rôles/permissions (rôle + exception individuelle), Super Admin, tableau de bord de base, journal d'audit, Docker Compose, CI/CD minimal, `createsuperadmin` | ✅ Livrée |
 | **2 — RH & Courrier** | App `validation` (circuits réutilisables), fiches employés + contrats + carrière + médical, congés (solde temps réel, validation manager→RH), module Courrier (numérotation auto, affectation, traçabilité, accusé, export) | ✅ Livrée |
-| 3 — Tâches | Assignation, soumission, commentaires, rappels | ⏳ |
+| **3 — Tâches** | Création/assignation (individu, sélection, équipe), kanban + calendrier, sous-tâches/checklists, étiquettes, soumission + validation par assigné, fil de commentaires, tâches récurrentes, rappels J-1/J/retard, tableau de bord de performance | ✅ Livrée |
 | 4 — Documents | Diffusion ciblée + espace documentaire général | ⏳ |
 | 5 — Communication temps réel | Rocket.Chat + Jitsi (SSO), Agenda personnel | ⏳ |
 | 6 — Finalisation | Demandes transverses, compléments, exports, tableaux de bord avancés | ⏳ |
@@ -31,5 +31,8 @@ selon la *Definition of Done* avant de passer à la suivante.
 | Décompte des congés | Jours ouvrés (lun–ven) hors fériés (table `PublicHoliday`, Sénégal) | 2026-08-29 |
 | Numérotation courrier | `AAAA-ARR/DEP-NNNN`, compteur annuel, déclinable par département | 2026-08-29 |
 | Onboarding/offboarding, évaluations | Reportés en Phase 6 | 2026-08-29 |
+| Assignation d'une tâche à une équipe | Snapshot instantané des membres à la création (ajustable ensuite) | 2026-08-29 |
+| Clôture d'une tâche multi-assignés | Auto quand tous validés + clôture/réouverture manuelle | 2026-08-29 |
+| Rappels d'échéance des tâches | J-1, jour J, puis relance quotidienne en retard | 2026-08-29 |
 | 2FA | Socle prêt (TOTP activable), enforcement par rôle repoussé en phase 6 | 2026-08-29 |
 | Authentification API | JWT (SimpleJWT) access court + refresh avec blacklist | 2026-08-29 |

@@ -86,14 +86,26 @@ class DashboardView(APIView):
 
     @staticmethod
     def _personal_widgets(data, user):
+        from django.utils import timezone
+
         from apps.correspondence.models import Mail, MailStatus
         from apps.hr.models import LeaveRequest
+        from apps.tasks.models import Task, TaskStatus
 
         data["widgets"]["my_mail"] = Mail.objects.filter(
             assigned_to=user
         ).exclude(status__in=[MailStatus.PROCESSED, MailStatus.ARCHIVED]).count()
         data["widgets"]["my_leave_pending"] = LeaveRequest.objects.filter(
             employee__user=user, status="in_review"
+        ).count()
+
+        my_tasks = Task.objects.filter(assignments__user=user).exclude(status=TaskStatus.DONE)
+        data["widgets"]["my_tasks_open"] = my_tasks.distinct().count()
+        data["widgets"]["my_tasks_overdue"] = my_tasks.filter(
+            due_at__lt=timezone.now()
+        ).distinct().count()
+        data["widgets"]["my_tasks_to_review"] = Task.objects.filter(
+            created_by=user, status=TaskStatus.IN_REVIEW
         ).count()
 
     @staticmethod

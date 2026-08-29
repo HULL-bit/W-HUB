@@ -52,6 +52,7 @@ PERMISSION_CATALOG: list[tuple[str, str, str]] = [
     ("tasks.assign", "Créer et assigner des tâches", MODULE_TASKS),
     ("tasks.submit", "Soumettre un livrable", MODULE_TASKS),
     ("tasks.validate", "Valider ou renvoyer une tâche soumise", MODULE_TASKS),
+    ("tasks.oversee", "Superviser les tâches et la performance (transverse)", MODULE_TASKS),
     # --- Documents (phase 4) ---
     ("documents.view", "Consulter l'espace documentaire", MODULE_DOCUMENTS),
     ("documents.send", "Envoyer un document ciblé", MODULE_DOCUMENTS),
@@ -90,6 +91,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "tasks.assign",
             "tasks.submit",
             "tasks.validate",
+            "tasks.oversee",
             "documents.view",
             "documents.send",
             "documents.broadcast",
@@ -151,6 +153,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "tasks.assign",
             "tasks.submit",
             "tasks.validate",
+            "tasks.oversee",
             "documents.view",
             "documents.send",
             "documents.broadcast",

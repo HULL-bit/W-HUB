@@ -1,6 +1,65 @@
 # Schéma de la base de données
 
-État après la **Phase 2**. Le schéma s'enrichit à chaque phase.
+État après la **Phase 3**. Le schéma s'enrichit à chaque phase.
+
+## Diagramme (Phase 3 — Tâches)
+
+```mermaid
+erDiagram
+    TASK ||--o{ TASK_ASSIGNMENT : ""
+    TASK ||--o{ TASK_SUBMISSION : ""
+    TASK ||--o{ TASK_COMMENT : ""
+    TASK ||--o{ CHECKLIST_ITEM : ""
+    TASK ||--o{ TASK_ATTACHMENT : ""
+    TASK ||--o{ TASK : "parent (sous-tâches)"
+    TASK }o--o{ TASK_LABEL : ""
+    TASK_SUBMISSION ||--o{ TASK_SUBMISSION_ATTACHMENT : ""
+    RECURRING_TASK_TEMPLATE ||--o{ TASK : "génère"
+    USER ||--o{ TASK_ASSIGNMENT : ""
+    USER ||--o{ TASK_SUBMISSION : ""
+
+    TASK {
+        int id PK
+        string title
+        string priority
+        string status "todo|in_progress|in_review|done"
+        uuid created_by_id FK
+        int parent_id FK
+        int assigned_team_id FK
+        int assigned_department_id FK
+        datetime due_at
+        decimal estimated_hours
+        datetime closed_at
+    }
+    TASK_ASSIGNMENT {
+        int id PK
+        int task_id FK
+        uuid user_id FK
+        string progress_status "todo|in_progress|submitted|validated|returned"
+        decimal declared_hours
+    }
+    TASK_SUBMISSION {
+        int id PK
+        int task_id FK
+        uuid submitted_by_id FK
+        text report
+        string status "submitted|validated|returned"
+        uuid reviewed_by_id FK
+    }
+    RECURRING_TASK_TEMPLATE {
+        int id PK
+        string frequency "weekly|monthly"
+        int interval
+        int weekday
+        int day_of_month
+        int lead_time_days
+        date next_due_date
+    }
+```
+
+Clôture : `Task.recompute_status()` passe en `done` quand toutes les
+`TaskAssignment` sont `validated` ; sinon en `in_review` dès qu'une soumission
+existe. Le chef peut forcer le statut (`/tasks/{id}/status/`).
 
 ## Diagramme (Phase 2 — RH, Courrier, validation)
 
@@ -218,7 +277,9 @@ organization/0001_initial
 permissions/0001_initial, 0002_seed_catalog, 0003_phase2_catalog
 audit/0001_initial
 notifications/0001_initial
+permissions/0004_phase3_catalog
 validation/0001_initial, 0002_seed_leave_flow
 hr/0001_initial, 0002_seed_leave_types_holidays
 correspondence/0001_initial
+tasks/0001_initial
 ```
