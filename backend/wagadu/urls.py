@@ -17,15 +17,15 @@ api_v1 = [
     path("", include("apps.correspondence.urls")),
     path("", include("apps.tasks.urls")),
     path("", include("apps.documents.urls")),
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        "schema/swagger/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
-    ),
 ]
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include((api_v1, "api"), namespace="v1")),
+    path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/v1/schema/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
 ]

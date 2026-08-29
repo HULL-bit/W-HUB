@@ -1,16 +1,11 @@
 /** @type {import('next').NextConfig} */
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-
+// En développement, NEXT_PUBLIC_API_BASE_URL pointe directement sur le backend
+// Django (ex. http://localhost:8000/api/v1) et le CORS l'autorise. En production,
+// Nginx sert le front et proxifie /api/ vers Django (voir infra/nginx).
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
-  async rewrites() {
-    // En dev, proxifie les appels /api vers le backend Django.
-    if (process.env.NODE_ENV === "development") {
-      return [{ source: "/api/:path*", destination: `${API_BASE.replace(/\/api\/v1$/, "")}/api/:path*` }];
-    }
-    return [];
-  },
+  skipTrailingSlashRedirect: true,
   async headers() {
     return [
       {

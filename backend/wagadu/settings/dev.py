@@ -17,6 +17,9 @@ if os.environ.get("USE_SQLITE", "1") == "1":
 CELERY_TASK_ALWAYS_EAGER = True
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# Front local (ports variables) : CORS ouvert en développement uniquement.
+CORS_ALLOW_ALL_ORIGINS = True
+
 # Pas de limitation de débit en dev / tests (réactivée en production).
 REST_FRAMEWORK = {**REST_FRAMEWORK, "DEFAULT_THROTTLE_CLASSES": [], "DEFAULT_THROTTLE_RATES": {}}
 

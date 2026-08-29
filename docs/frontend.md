@@ -15,7 +15,10 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 # http://localhost:3000
 ```
 
-En `npm run dev`, `next.config.mjs` proxifie `/api/*` vers le backend Django.
+En développement, le front appelle **directement** le backend Django à l'URL
+`NEXT_PUBLIC_API_BASE_URL` (CORS ouvert dans `wagadu.settings.dev`). En
+production, Nginx sert le front et proxifie `/api/` vers Django
+(`NEXT_PUBLIC_API_BASE_URL=/api/v1`).
 
 ## Scripts
 

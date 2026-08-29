@@ -77,7 +77,9 @@ class MailViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         log_view(instance, actor=request.user)
-        return Response(self.get_serializer(instance).data)
+        # relire pour inclure l'évènement « Consulté » qui vient d'être créé
+        fresh = self.get_queryset().get(pk=instance.pk)
+        return Response(self.get_serializer(fresh).data)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
