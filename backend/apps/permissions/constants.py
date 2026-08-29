@@ -58,6 +58,7 @@ PERMISSION_CATALOG: list[tuple[str, str, str]] = [
     ("documents.send", "Envoyer un document ciblé", MODULE_DOCUMENTS),
     ("documents.broadcast", "Diffuser un document à tout le personnel", MODULE_DOCUMENTS),
     ("documents.manage_library", "Gérer la bibliothèque documentaire", MODULE_DOCUMENTS),
+    ("documents.share_external", "Générer des liens de partage externes", MODULE_DOCUMENTS),
     # --- Réunions (phase 5) ---
     ("meetings.create", "Créer une réunion", MODULE_MEETINGS),
     # --- Demandes transverses (phase 6) ---
@@ -95,6 +96,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "documents.view",
             "documents.send",
             "documents.broadcast",
+            "documents.share_external",
             "mail.view",
             "mail.register",
             "mail.assign",
@@ -115,6 +117,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "tasks.submit",
             "documents.view",
             "documents.send",
+            "documents.share_external",
             "mail.view",
             "meetings.create",
             "hr.view",
@@ -158,6 +161,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "documents.send",
             "documents.broadcast",
             "documents.manage_library",
+            "documents.share_external",
             "mail.view",
             "mail.register",
             "mail.assign",

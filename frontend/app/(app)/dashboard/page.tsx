@@ -18,6 +18,7 @@ interface Dashboard {
     my_tasks_open?: number;
     my_tasks_overdue?: number;
     my_tasks_to_review?: number;
+    my_documents_unread?: number;
   };
 }
 
@@ -89,6 +90,13 @@ export default function DashboardPage() {
               <div className="card">
                 <p className="label">Tâches à valider</p>
                 <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_tasks_to_review}</p>
+              </div>
+            )}
+            {!!data.widgets.my_documents_unread && (
+              <div className="card">
+                <p className="label">Documents non lus</p>
+                <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_documents_unread}</p>
+                <Link href="/documents/received" className="text-sm text-wagadu-terracotta">Voir</Link>
               </div>
             )}
             {!!data.widgets.my_mail && (

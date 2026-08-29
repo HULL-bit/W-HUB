@@ -1,6 +1,72 @@
 # Schéma de la base de données
 
-État après la **Phase 3**. Le schéma s'enrichit à chaque phase.
+État après la **Phase 4**. Le schéma s'enrichit à chaque phase.
+
+## Diagramme (Phase 4 — Documents)
+
+```mermaid
+erDiagram
+    FOLDER ||--o{ DOCUMENT : ""
+    FOLDER ||--o{ FOLDER : "parent"
+    DOCUMENT ||--o{ DOCUMENT_VERSION : "historique"
+    DOCUMENT ||--o| DOCUMENT_VERSION : "current_version"
+    DOCUMENT ||--o{ DOCUMENT_VISIBILITY_RULE : ""
+    DOCUMENT ||--o{ DOCUMENT_DISTRIBUTION : ""
+    DOCUMENT_DISTRIBUTION ||--o{ DOCUMENT_RECIPIENT : "suivi de lecture"
+    DOCUMENT ||--o{ SHARE_LINK : ""
+    USER ||--o{ DOCUMENT_RECIPIENT : ""
+
+    DOCUMENT {
+        int id PK
+        string title
+        string keywords
+        int folder_id FK
+        uuid owner_id FK
+        bool is_in_library
+        string visibility "public|restricted"
+        int current_version_id FK
+        datetime deleted_at
+    }
+    DOCUMENT_VERSION {
+        int id PK
+        int document_id FK
+        int version_number
+        file file
+        int size
+        text text_content
+    }
+    DOCUMENT_DISTRIBUTION {
+        int id PK
+        int document_id FK
+        int version_id FK
+        uuid sent_by_id FK
+        string mode "user|selection|broadcast"
+    }
+    DOCUMENT_RECIPIENT {
+        int id PK
+        int distribution_id FK
+        int document_id FK
+        uuid user_id FK
+        bool is_read
+        datetime read_at
+        datetime reminded_at
+    }
+    SHARE_LINK {
+        int id PK
+        int document_id FK
+        int version_id FK
+        string token UK
+        string password_hash
+        datetime expires_at
+        int max_downloads
+        int download_count
+        bool is_revoked
+    }
+```
+
+Visibilité : `Document.objects.visible_to(user)` = propriétaire ∪ bibliothèque
+publique ∪ documents reçus ∪ bibliothèque restreinte dont une règle
+(`role`/`department`) correspond ∪ (tout si `documents.manage_library`).
 
 ## Diagramme (Phase 3 — Tâches)
 
@@ -277,9 +343,10 @@ organization/0001_initial
 permissions/0001_initial, 0002_seed_catalog, 0003_phase2_catalog
 audit/0001_initial
 notifications/0001_initial
-permissions/0004_phase3_catalog
+permissions/0004_phase3_catalog, 0005_phase4_catalog
 validation/0001_initial, 0002_seed_leave_flow
 hr/0001_initial, 0002_seed_leave_types_holidays
 correspondence/0001_initial
 tasks/0001_initial
+documents/0001_initial
 ```
