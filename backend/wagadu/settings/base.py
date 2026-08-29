@@ -60,6 +60,7 @@ LOCAL_APPS = [
     "apps.hr",
     "apps.correspondence",
     "apps.tasks",
+    "apps.documents",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -135,8 +136,29 @@ USE_TZ = True
 # --- Fichiers statiques / médias ----------------------------------------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Fichiers utilisateurs : MinIO (S3) dès qu'une clé d'accès est configurée,
+# stockage disque local sinon (développement).
+if env("MINIO_ACCESS_KEY"):
+    _default_storage = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": env("MINIO_BUCKET", "wagadu-hub"),
+            "endpoint_url": env("MINIO_ENDPOINT", "http://minio:9000"),
+            "access_key": env("MINIO_ACCESS_KEY"),
+            "secret_key": env("MINIO_SECRET_KEY"),
+            "region_name": env("MINIO_REGION", "us-east-1"),
+            "use_ssl": env_bool("MINIO_USE_SSL", False),
+            "addressing_style": "path",
+            "file_overwrite": False,
+            "querystring_auth": True,
+        },
+    }
+else:
+    _default_storage = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "default": _default_storage,
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
     },
@@ -224,6 +246,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.tasks.tasks.send_task_deadline_reminders",
         "schedule": crontab(hour=6, minute=30),
     },
+    "purge-trashed-documents": {
+        "task": "apps.documents.tasks.purge_trashed_documents",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }
 
 # --- E-mail ---------------------------------------------------------
@@ -251,6 +277,7 @@ WAGADU = {
     "AUDIT_RETENTION_DAYS": 365,  # 12 mois glissants
     "LOGIN_MAX_FAILED_ATTEMPTS": 5,
     "LOGIN_LOCKOUT_MINUTES": 15,
+    "DOC_TRASH_RETENTION_DAYS": 30,
 }
 
 # --- Sécurité (renforcée en prod) -----------------------------------

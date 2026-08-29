@@ -8,7 +8,7 @@ selon la *Definition of Done* avant de passer à la suivante.
 | **1 — Socle technique** | Auth JWT, utilisateurs/rôles/permissions (rôle + exception individuelle), Super Admin, tableau de bord de base, journal d'audit, Docker Compose, CI/CD minimal, `createsuperadmin` | ✅ Livrée |
 | **2 — RH & Courrier** | App `validation` (circuits réutilisables), fiches employés + contrats + carrière + médical, congés (solde temps réel, validation manager→RH), module Courrier (numérotation auto, affectation, traçabilité, accusé, export) | ✅ Livrée |
 | **3 — Tâches** | Création/assignation (individu, sélection, équipe), kanban + calendrier, sous-tâches/checklists, étiquettes, soumission + validation par assigné, fil de commentaires, tâches récurrentes, rappels J-1/J/retard, tableau de bord de performance | ✅ Livrée |
-| 4 — Documents | Diffusion ciblée + espace documentaire général | ⏳ |
+| **4 — Documents** | Diffusion ciblée (unique / sélection / broadcast) + suivi de lecture par destinataire + relance, bibliothèque commune, dossiers, recherche full-text, versions, visibilité par rôle/département, MinIO, liens de partage externes (mot de passe / expiration / quota), aperçu navigateur, corbeille + purge 30 j | ✅ Livrée |
 | 5 — Communication temps réel | Rocket.Chat + Jitsi (SSO), Agenda personnel | ⏳ |
 | 6 — Finalisation | Demandes transverses, compléments, exports, tableaux de bord avancés | ⏳ |
 
@@ -34,5 +34,9 @@ selon la *Definition of Done* avant de passer à la suivante.
 | Assignation d'une tâche à une équipe | Snapshot instantané des membres à la création (ajustable ensuite) | 2026-08-29 |
 | Clôture d'une tâche multi-assignés | Auto quand tous validés + clôture/réouverture manuelle | 2026-08-29 |
 | Rappels d'échéance des tâches | J-1, jour J, puis relance quotidienne en retard | 2026-08-29 |
+| Visibilité biblio documentaire | Public par défaut, restriction optionnelle par rôle/département/projet | 2026-08-29 |
+| Suivi de lecture d'une diffusion générale | Une ligne par employé (snapshot à l'envoi) | 2026-08-29 |
+| Recherche « contenu » des documents | Extraction txt/md/csv maintenant, PDF différé (Phase 6) | 2026-08-29 |
+| Rétention de la corbeille documentaire | 30 jours puis purge | 2026-08-29 |
 | 2FA | Socle prêt (TOTP activable), enforcement par rôle repoussé en phase 6 | 2026-08-29 |
 | Authentification API | JWT (SimpleJWT) access court + refresh avec blacklist | 2026-08-29 |

@@ -8,6 +8,8 @@ const NAV: { href: string; label: string; perm?: string }[] = [
   { href: "/dashboard", label: "Tableau de bord" },
   { href: "/tasks", label: "Mes tâches" },
   { href: "/tasks/board", label: "Suivi des tâches", perm: "tasks.assign" },
+  { href: "/documents", label: "Documents", perm: "documents.view" },
+  { href: "/documents/received", label: "Documents reçus" },
   { href: "/leave", label: "Mes congés" },
   { href: "/leave/validate", label: "Congés à valider", perm: "hr.leave.validate" },
   { href: "/mail", label: "Courrier", perm: "mail.view" },

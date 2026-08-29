@@ -157,6 +157,8 @@ AUTO_TRACKED_MODELS: set[str] = set(
             "correspondence.Mail",
             "tasks.Task",
             "tasks.RecurringTaskTemplate",
+            "documents.Document",
+            "documents.DocumentVisibilityRule",
         },
     )
 )

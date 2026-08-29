@@ -108,6 +108,12 @@ class DashboardView(APIView):
             created_by=user, status=TaskStatus.IN_REVIEW
         ).count()
 
+        from apps.documents.models import DocumentRecipient
+
+        data["widgets"]["my_documents_unread"] = DocumentRecipient.objects.filter(
+            user=user, is_read=False, document__deleted_at__isnull=True
+        ).count()
+
     @staticmethod
     def _shortcuts(perms: set[str]) -> list[dict]:
         catalog = [
