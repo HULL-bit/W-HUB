@@ -10,5 +10,6 @@
 | [deployment.md](deployment.md) | Environnements, Docker, CI/CD, sauvegarde/restauration, check-list sécurité |
 | [phase-1-socle.md](phase-1-socle.md) | Détail de la Phase 1 livrée |
 | [phase-2-rh-courrier.md](phase-2-rh-courrier.md) | Détail de la Phase 2 livrée (RH, Courrier, circuits de validation) |
+| [phase-3-taches.md](phase-3-taches.md) | Détail de la Phase 3 livrée (module Tâches) |
 
 Cahier des charges de référence : `../Cahier_des_charges_Wagadu_Africa.docx`.

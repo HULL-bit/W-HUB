@@ -59,6 +59,7 @@ LOCAL_APPS = [
     "apps.validation",
     "apps.hr",
     "apps.correspondence",
+    "apps.tasks",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -214,6 +215,14 @@ CELERY_BEAT_SCHEDULE = {
     "remind-untreated-mail": {
         "task": "apps.correspondence.tasks.remind_untreated_mail",
         "schedule": crontab(hour=8, minute=0),
+    },
+    "generate-recurring-tasks": {
+        "task": "apps.tasks.tasks.generate_recurring_tasks",
+        "schedule": crontab(hour=6, minute=0),
+    },
+    "task-deadline-reminders": {
+        "task": "apps.tasks.tasks.send_task_deadline_reminders",
+        "schedule": crontab(hour=6, minute=30),
     },
 }
 

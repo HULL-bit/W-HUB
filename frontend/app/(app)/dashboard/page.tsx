@@ -15,6 +15,9 @@ interface Dashboard {
     hr?: { headcount: number; pending_leave: number; contracts_expiring: number };
     my_mail?: number;
     my_leave_pending?: number;
+    my_tasks_open?: number;
+    my_tasks_overdue?: number;
+    my_tasks_to_review?: number;
   };
 }
 
@@ -71,6 +74,21 @@ export default function DashboardPage() {
                 <p className="text-sm text-wagadu-terracotta">
                   {data.widgets.hr.pending_leave} congé(s) à valider · {data.widgets.hr.contracts_expiring} contrat(s) &lt; 60 j
                 </p>
+              </div>
+            )}
+            {!!data.widgets.my_tasks_open && (
+              <div className="card">
+                <p className="label">Mes tâches en cours</p>
+                <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_tasks_open}</p>
+                {!!data.widgets.my_tasks_overdue && (
+                  <p className="text-sm text-wagadu-terracotta">{data.widgets.my_tasks_overdue} en retard</p>
+                )}
+              </div>
+            )}
+            {!!data.widgets.my_tasks_to_review && (
+              <div className="card">
+                <p className="label">Tâches à valider</p>
+                <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_tasks_to_review}</p>
               </div>
             )}
             {!!data.widgets.my_mail && (

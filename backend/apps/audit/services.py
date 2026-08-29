@@ -155,6 +155,8 @@ AUTO_TRACKED_MODELS: set[str] = set(
             "validation.ValidationFlow",
             "validation.ValidationStep",
             "correspondence.Mail",
+            "tasks.Task",
+            "tasks.RecurringTaskTemplate",
         },
     )
 )

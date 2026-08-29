@@ -1,0 +1,303 @@
+from __future__ import annotations
+
+from django.db.models import Count, F, Q
+from django.utils import timezone
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from apps.accounts.models import User
+from apps.audit.models import AuditAction
+from apps.audit.services import record
+from apps.permissions.drf import HasPermission
+from apps.permissions.services import has_permission
+
+from .models import (
+    ChecklistItem,
+    RecurringTaskTemplate,
+    Task,
+    TaskAttachment,
+    TaskComment,
+    TaskLabel,
+    TaskStatus,
+    TaskSubmissionAttachment,
+)
+from .serializers import (
+    ChecklistItemSerializer,
+    RecurringTaskTemplateSerializer,
+    SubmissionAttachmentSerializer,
+    TaskAttachmentSerializer,
+    TaskCommentSerializer,
+    TaskLabelSerializer,
+    TaskSerializer,
+    TaskWriteSerializer,
+)
+from .services import (
+    create_task,
+    duplicate_task,
+    review_submission,
+    set_assignees,
+    set_progress,
+    set_task_status,
+    submit_task,
+)
+
+ASSIGN = HasPermission.of("tasks.assign")
+OVERSEE = HasPermission.of("tasks.oversee")
+
+
+def visible_tasks(user):
+    qs = Task.objects.select_related("created_by").prefetch_related(
+        "assignments__user", "labels", "checklist", "attachments",
+        "comments__author", "submissions__attachments", "subtasks",
+    )
+    if user.is_super_admin or has_permission(user, "tasks.oversee"):
+        return qs
+    return qs.filter(
+        Q(assignments__user=user)
+        | Q(created_by=user)
+        | Q(assignments__user__manager=user)
+    ).distinct()
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    filterset_fields = ["status", "priority", "assigned_department", "assigned_team", "parent"]
+    search_fields = ["title", "description"]
+    ordering_fields = ["due_at", "created_at", "priority"]
+
+    def get_queryset(self):
+        qs = visible_tasks(self.request.user)
+        params = self.request.query_params
+        if params.get("assignee"):
+            qs = qs.filter(assignments__user_id=params["assignee"])
+        if params.get("label"):
+            qs = qs.filter(labels__id=params["label"])
+        if params.get("overdue") == "true":
+            qs = qs.filter(due_at__lt=timezone.now()).exclude(status=TaskStatus.DONE)
+        return qs.distinct()
+
+    def get_serializer_class(self):
+        return TaskWriteSerializer if self.action in ("create", "update", "partial_update") else TaskSerializer
+
+    def get_permissions(self):
+        if self.action in ("create", "destroy", "assign", "set_status", "decide", "duplicate"):
+            return [IsAuthenticated(), ASSIGN()]
+        return [IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        serializer = TaskWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        v = serializer.validated_data
+        assignee_ids = v.pop("assignee_ids", [])
+        label_ids = v.pop("label_ids", [])
+        team = v.pop("assigned_team", None)
+        department = v.pop("assigned_department", None)
+        task = create_task(
+            data={**v, "assigned_team": team, "assigned_department": department},
+            actor=request.user,
+            assignee_users=list(User.objects.filter(id__in=assignee_ids)),
+            team=team, department=department, label_ids=label_ids,
+        )
+        return Response(TaskSerializer(task).data, status=201)
+
+    def perform_destroy(self, instance):
+        if instance.created_by_id != self.request.user.id and not self.request.user.is_super_admin:
+            raise PermissionDenied("Seul le créateur peut supprimer la tâche.")
+        record(action=AuditAction.DELETE, module="tasks", actor=self.request.user,
+               target=instance, target_repr=instance.title, message="Suppression de la tâche")
+        instance.delete()
+
+    @action(detail=True, methods=["post"])
+    def assign(self, request, pk=None):
+        task = self.get_object()
+        set_assignees(
+            task, actor=request.user,
+            add_user_ids=request.data.get("add", []),
+            remove_user_ids=request.data.get("remove", []),
+        )
+        return Response(TaskSerializer(self.get_queryset().get(pk=task.pk)).data)
+
+    @action(detail=True, methods=["post"], url_path="status")
+    def set_status(self, request, pk=None):
+        task = self.get_object()
+        set_task_status(task, actor=request.user, status=request.data.get("status"))
+        return Response(TaskSerializer(self.get_queryset().get(pk=task.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def progress(self, request, pk=None):
+        task = self.get_object()
+        set_progress(task, user=request.user, progress=request.data.get("progress"))
+        return Response(TaskSerializer(self.get_queryset().get(pk=task.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def submit(self, request, pk=None):
+        task = self.get_object()
+        submit_task(
+            task, user=request.user,
+            report=request.data.get("report", ""),
+            declared_hours=request.data.get("declared_hours"),
+        )
+        return Response(TaskSerializer(self.get_queryset().get(pk=task.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def decide(self, request, pk=None):
+        task = self.get_object()
+        review_submission(
+            task, reviewer=request.user,
+            target_user_id=request.data.get("user"),
+            decision=request.data.get("decision"),
+            comment=request.data.get("comment", ""),
+        )
+        return Response(TaskSerializer(self.get_queryset().get(pk=task.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def duplicate(self, request, pk=None):
+        clone = duplicate_task(self.get_object(), actor=request.user)
+        return Response(TaskSerializer(clone).data, status=201)
+
+    @action(detail=False, methods=["get"])
+    def mine(self, request):
+        qs = Task.objects.filter(assignments__user=request.user).prefetch_related(
+            "assignments__user", "labels"
+        ).distinct()
+        if request.query_params.get("scope") == "week":
+            end = timezone.now() + timezone.timedelta(days=7)
+            qs = qs.filter(due_at__lte=end).exclude(status=TaskStatus.DONE)
+        return Response(TaskSerializer(qs, many=True).data)
+
+    @action(detail=False, methods=["get"])
+    def board(self, request):
+        qs = self.get_queryset()
+        if request.query_params.get("assignee"):
+            qs = qs.filter(assignments__user_id=request.query_params["assignee"])
+        columns = {s: [] for s in TaskStatus.values}
+        for task in qs:
+            columns[task.status].append(TaskSerializer(task).data)
+        return Response(columns)
+
+    @action(detail=False, methods=["get"])
+    def performance(self, request):
+        if not (request.user.is_super_admin or has_permission(request.user, "tasks.oversee")
+                or has_permission(request.user, "tasks.assign")):
+            raise PermissionDenied("Accès réservé aux responsables.")
+        base = visible_tasks(request.user).filter(status=TaskStatus.DONE, closed_at__isnull=False)
+        on_time = base.filter(Q(due_at__isnull=True) | Q(closed_at__lte=F("due_at"))).count()
+        late = base.count() - on_time
+        per_user = list(
+            Task.objects.filter(assignments__user__isnull=False)
+            .values("assignments__user__email")
+            .annotate(
+                total=Count("id", distinct=True),
+                done=Count("id", filter=Q(status=TaskStatus.DONE), distinct=True),
+            )
+            .order_by("-total")[:20]
+        )
+        return Response({
+            "completed": base.count(),
+            "on_time": on_time,
+            "late": late,
+            "open_overdue": visible_tasks(request.user).filter(
+                due_at__lt=timezone.now()
+            ).exclude(status=TaskStatus.DONE).count(),
+            "per_user": per_user,
+        })
+
+
+class TaskCommentViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskCommentSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ["task"]
+
+    def get_queryset(self):
+        return TaskComment.objects.select_related("author").filter(
+            task__in=visible_tasks(self.request.user)
+        )
+
+    def perform_create(self, serializer):
+        comment = serializer.save(author=self.request.user)
+        task = comment.task
+        record(action=AuditAction.CREATE, module="tasks", actor=self.request.user,
+               target=task, message="Commentaire ajouté")
+        recipients = {a.user_id for a in task.assignments.all()} | {task.created_by_id}
+        recipients.discard(self.request.user.id)
+        from apps.notifications.services import notify
+
+        for uid in recipients:
+            notify(User.objects.get(id=uid), title="Nouveau commentaire",
+                   body=f"« {task.title} » : {comment.body[:120]}",
+                   url=f"/tasks/{task.id}", type="task")
+
+
+class ChecklistItemViewSet(viewsets.ModelViewSet):
+    serializer_class = ChecklistItemSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ["task"]
+
+    def get_queryset(self):
+        return ChecklistItem.objects.filter(task__in=visible_tasks(self.request.user))
+
+    def perform_update(self, serializer):
+        item = serializer.save()
+        if "is_done" in serializer.validated_data:
+            item.done_by = self.request.user if item.is_done else None
+            item.done_at = timezone.now() if item.is_done else None
+            item.save(update_fields=["done_by", "done_at"])
+
+
+class TaskLabelViewSet(viewsets.ModelViewSet):
+    queryset = TaskLabel.objects.all()
+    serializer_class = TaskLabelSerializer
+
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), ASSIGN()]
+
+
+class TaskAttachmentViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskAttachmentSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ["task"]
+
+    def get_queryset(self):
+        return TaskAttachment.objects.filter(task__in=visible_tasks(self.request.user))
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
+
+class SubmissionAttachmentViewSet(viewsets.ModelViewSet):
+    serializer_class = SubmissionAttachmentSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ["submission"]
+
+    def get_queryset(self):
+        return TaskSubmissionAttachment.objects.filter(
+            submission__task__in=visible_tasks(self.request.user)
+        )
+
+    def perform_create(self, serializer):
+        submission = serializer.validated_data["submission"]
+        if submission.submitted_by_id != self.request.user.id:
+            raise PermissionDenied("Vous ne pouvez joindre un fichier qu'à votre propre soumission.")
+        serializer.save()
+
+
+class RecurringTaskTemplateViewSet(viewsets.ModelViewSet):
+    queryset = RecurringTaskTemplate.objects.prefetch_related("default_assignees").all()
+    serializer_class = RecurringTaskTemplateSerializer
+    permission_classes = [IsAuthenticated, ASSIGN]
+
+    def perform_create(self, serializer):
+        template = serializer.save(created_by=self.request.user)
+        record(action=AuditAction.CREATE, module="tasks", actor=self.request.user,
+               target=template, message=f"Modèle de tâche récurrente « {template.title} »")
+
+    @action(detail=True, methods=["post"])
+    def generate_now(self, request, pk=None):
+        from .services import generate_task_from_template
+
+        task = generate_task_from_template(self.get_object())
+        return Response(TaskSerializer(task).data if task else {}, status=201 if task else 400)
