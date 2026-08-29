@@ -81,7 +81,8 @@ export default function RolesPage() {
                             checked={draft.has(p.code)}
                             onChange={(e) => {
                               const next = new Set(draft);
-                              e.target.checked ? next.add(p.code) : next.delete(p.code);
+                              if (e.target.checked) next.add(p.code);
+                              else next.delete(p.code);
                               setDraft(next);
                             }} />
                           <span title={p.code}>{p.label}</span>

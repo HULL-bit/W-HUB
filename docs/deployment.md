@@ -36,17 +36,35 @@ démarrage du conteneur.
 
 ## CI/CD (GitHub Actions)
 
-- **`.github/workflows/ci.yml`** — à chaque push / PR : lint (`ruff`, `eslint`),
-  tests (`pytest`, `vitest`), vérification des migrations, build des images Docker.
-- **`.github/workflows/deploy.yml`** — push sur `develop` (staging) ou `main`
-  (production) : build + push des images vers GHCR, déploiement SSH
-  (`git pull` + `docker compose up -d` + `migrate`), notification.
+- **`.github/workflows/ci.yml`** — à chaque push / PR :
+  - backend : `ruff check`, `manage.py makemigrations --check`, `pytest --cov`
+    (Python 3.13, SQLite) ;
+  - frontend : `eslint .` (config plate `eslint.config.mjs`), `vitest run`,
+    `next build` (Node 22) ;
+  - `docker` : build des deux images pour valider les `Dockerfile`.
+- **`.github/workflows/deploy.yml`** — push sur `develop` (→ env `staging`) ou
+  `main` (→ env `production`) :
+  1. `build-push` : `docker/build-push-action` construit et pousse
+     `ghcr.io/<owner>/wagadu-hub-{backend,frontend}:<latest|staging>` (cache GHA,
+     nom du registre forcé en minuscules).
+  2. `deploy` : connexion SSH au serveur → `git pull` →
+     `docker compose pull backend frontend` (avec `REGISTRY` / `IMAGE_TAG`) →
+     `docker compose up -d` → `migrate` via `compose run --rm backend`.
 
-### Secrets requis (Settings → Secrets → Actions)
+`infra/docker-compose.yml` déclare `image:` **et** `build:` pour `backend`,
+`frontend`, `celery-worker`, `celery-beat` : le serveur tire les images depuis
+GHCR, un poste de dev peut toujours reconstruire localement (`up --build`).
 
-`SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`, `DEPLOY_PATH`.
-Par environnement : les valeurs `.env` de staging / production.
-`GITHUB_TOKEN` est fourni automatiquement pour GHCR.
+### Secrets requis (Settings → Secrets and variables → Actions)
+
+| Secret | Usage |
+|---|---|
+| `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` | connexion SSH au serveur |
+| `DEPLOY_PATH` | chemin du dépôt cloné sur le serveur (ex. `/opt/wagadu-hub`) |
+
+`GITHUB_TOKEN` est fourni automatiquement (le workflow déclare
+`permissions: packages: write` pour pousser sur GHCR). Les valeurs `.env` de
+chaque environnement sont gérées sur le serveur, pas dans GitHub.
 
 ## Sauvegarde & restauration
 

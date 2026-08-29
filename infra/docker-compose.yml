@@ -16,6 +16,7 @@ services:
       - frontend
 
   backend:
+    image: ${REGISTRY:-ghcr.io/hull-bit}/wagadu-hub-backend:${IMAGE_TAG:-latest}
     build: ../backend
     restart: unless-stopped
     env_file: .env
@@ -32,6 +33,7 @@ services:
         condition: service_started
 
   frontend:
+    image: ${REGISTRY:-ghcr.io/hull-bit}/wagadu-hub-frontend:${IMAGE_TAG:-latest}
     build:
       context: ../frontend
       args:
@@ -61,6 +63,7 @@ services:
     # génération de PDF, purge du journal d'audit.
 
   celery-worker:
+    image: ${REGISTRY:-ghcr.io/hull-bit}/wagadu-hub-backend:${IMAGE_TAG:-latest}
     build: ../backend
     restart: unless-stopped
     env_file: .env
@@ -73,6 +76,7 @@ services:
       - redis
 
   celery-beat:
+    image: ${REGISTRY:-ghcr.io/hull-bit}/wagadu-hub-backend:${IMAGE_TAG:-latest}
     build: ../backend
     restart: unless-stopped
     env_file: .env
