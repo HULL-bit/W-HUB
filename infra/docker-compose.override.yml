@@ -1,6 +1,18 @@
 # Surcharge de développement local : hot-reload, ports exposés, settings dev.
-# Chargé automatiquement par `docker compose` en plus de docker-compose.yml.
+# Chargée automatiquement par `docker compose` en plus de docker-compose.yml.
+#
+#   cd infra && cp .env.example .env      # (déjà fait ? sinon, le faire)
+#   docker compose up -d --build
+#   docker compose exec backend python manage.py createsuperadmin
+#
+# Front : http://localhost:3000   API : http://localhost:8000/api/v1
+# (Nginx sur http://localhost sert aussi l'ensemble.)
 services:
+  # Nginx en HTTP simple pour le dev (la config prod exige des certificats TLS).
+  nginx:
+    volumes:
+      - ./nginx/dev:/etc/nginx/conf.d:ro
+
   backend:
     build: ../backend
     environment:
@@ -20,22 +32,34 @@ services:
       context: ../frontend
     environment:
       NODE_ENV: development
+      # Servi via Nginx (http://localhost) : l'API est sur la même origine.
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
+      WATCHPACK_POLLING: "true"
     volumes:
       - ../frontend:/app
       - /app/node_modules
       - /app/.next
-    command: npm run dev
+    entrypoint: []
+    # npm ci : n'altère jamais package-lock.json (contrairement à npm install)
+    command: sh -c "npm ci --prefer-offline --no-audit || npm install --no-save; npm run dev"
     ports:
       - "3000:3000"
 
   celery-worker:
     environment:
       DJANGO_SETTINGS_MODULE: wagadu.settings.dev
+      USE_SQLITE: "0"
     volumes:
       - ../backend:/app
 
   celery-beat:
     environment:
       DJANGO_SETTINGS_MODULE: wagadu.settings.dev
+      USE_SQLITE: "0"
     volumes:
       - ../backend:/app
+    # laisse le backend appliquer les migrations avant de démarrer le scheduler
+    command: >
+      sh -c "sleep 12 &&
+             celery -A wagadu beat -l info
+             --scheduler django_celery_beat.schedulers:DatabaseScheduler"
