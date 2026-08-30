@@ -23,11 +23,27 @@ export const tokenStore = {
   },
 };
 
+function humanizeApiError(status: number, data: unknown): string {
+  if (typeof data === "string" && data.trim()) return data.slice(0, 300);
+  if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    if (typeof d.detail === "string") return d.detail;
+    const parts: string[] = [];
+    for (const [key, val] of Object.entries(d)) {
+      const text = Array.isArray(val) ? val.filter(Boolean).join(" ") : String(val);
+      if (!text) continue;
+      parts.push(key === "non_field_errors" ? text : `${key} : ${text}`);
+    }
+    if (parts.length) return parts.join(" · ");
+  }
+  return `Erreur ${status}`;
+}
+
 export class ApiError extends Error {
   status: number;
   data: unknown;
   constructor(status: number, data: unknown) {
-    super(typeof data === "object" && data && "detail" in data ? String((data as any).detail) : `Erreur ${status}`);
+    super(humanizeApiError(status, data));
     this.status = status;
     this.data = data;
   }
