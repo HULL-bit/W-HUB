@@ -322,7 +322,11 @@ WAGADU = {
     "DOC_TRASH_RETENTION_DAYS": 30,
     # --- Intégrations temps réel (Phase 5) — vides = désactivées ---
     "ROCKETCHAT": {
+        # URL publique (iframe côté navigateur)
         "URL": env("ROCKETCHAT_URL", ""),
+        # URL interne pour les appels API serveur→RC (réseau Docker) ;
+        # à défaut, on réutilise URL.
+        "API_URL": env("ROCKETCHAT_API_URL", "") or env("ROCKETCHAT_URL", ""),
         "ADMIN_USER": env("ROCKETCHAT_ADMIN_USER", ""),
         "ADMIN_PASSWORD": env("ROCKETCHAT_ADMIN_PASSWORD", ""),
     },

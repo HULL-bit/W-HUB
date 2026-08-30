@@ -46,17 +46,18 @@ def test_sso_happy_path_with_mocked_rocketchat(auth, employee, settings, monkeyp
             pass
 
         def upsert_user(self, **kw):
+            assert kw["password"]
             return {"_id": "rc123", "username": "employe"}
 
-        def create_personal_token(self, *, user_id):
-            assert user_id == "rc123"
-            return "personal-token-xyz"
+        def login_token(self, *, username, password):
+            assert username == "employe" and password
+            return "sso-token-xyz"
 
     monkeypatch.setattr("apps.integrations.services.RocketChatClient", FakeClient)
 
     resp = auth(employee).post("/api/v1/chat/sso/", {}, format="json")
     assert resp.status_code == 200
-    assert resp.data["auth_token"] == "personal-token-xyz"
+    assert resp.data["auth_token"] == "sso-token-xyz"
     assert resp.data["user_id"] == "rc123"
     assert ChatAccount.objects.filter(user=employee, rc_user_id="rc123").exists()
 

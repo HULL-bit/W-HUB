@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
+import { Icon } from "@/components/Icon";
 
 interface Status {
   rocketchat: { configured: boolean };
@@ -16,10 +17,11 @@ interface SSO {
 }
 
 export default function MessageriePage() {
-  const { data: status } = useApi<Status>("/integrations/status/");
+  const { data: status, loading: statusLoading } = useApi<Status>("/integrations/status/");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [sso, setSso] = useState<SSO | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!status?.rocketchat.configured) return;
@@ -28,28 +30,55 @@ export default function MessageriePage() {
       .catch((e) => setError(e instanceof Error ? e.message : "Connexion impossible"));
   }, [status]);
 
-  // Protocole d'intégration iframe Rocket.Chat : on pousse le jeton de connexion
-  useEffect(() => {
-    if (!sso) return;
-    const send = () => {
-      iframeRef.current?.contentWindow?.postMessage(
-        { externalCommand: "login-with-token", token: sso.auth_token },
-        sso.url,
-      );
-    };
-    const t = setTimeout(send, 2000);
-    return () => clearTimeout(t);
+  // Protocole d'intégration iframe Rocket.Chat.
+  const pushLogin = useCallback(() => {
+    if (!sso || !iframeRef.current?.contentWindow) return;
+    iframeRef.current.contentWindow.postMessage(
+      { event: "login-with-token", loginToken: sso.auth_token },
+      new URL(sso.url).origin,
+    );
   }, [sso]);
 
-  if (status && !status.rocketchat.configured) {
+  useEffect(() => {
+    if (!sso) return;
+    const onMessage = (ev: MessageEvent) => {
+      if (ev.origin !== new URL(sso.url).origin) return;
+      const data = ev.data as { eventName?: string };
+      if (data?.eventName === "startup" || data?.eventName === "Custom_Script_On_Logout") {
+        pushLogin();
+      }
+      if (data?.eventName === "Custom_Script_Logged_In" || data?.eventName === "startup") {
+        setReady(true);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    // filet de sécurité : quelques tentatives espacées le temps du chargement
+    const timers = [1500, 4000, 8000].map((d) => setTimeout(pushLogin, d));
+    return () => {
+      window.removeEventListener("message", onMessage);
+      timers.forEach(clearTimeout);
+    };
+  }, [sso, pushLogin]);
+
+  if (statusLoading) {
+    return <p className="text-sm text-wagadu-brown animate-fade">Chargement…</p>;
+  }
+
+  if (!status?.rocketchat.configured) {
     return (
       <div className="space-y-4">
         <h1 className="font-display text-2xl text-wagadu-brown">Messagerie</h1>
-        <div className="card">
+        <div className="card space-y-2">
           <p className="text-sm">
-            La messagerie instantanée (Rocket.Chat) n&apos;est pas encore configurée sur cette
-            instance. Un administrateur doit renseigner <code className="font-mono">ROCKETCHAT_URL</code> et
-            les identifiants d&apos;administration.
+            La messagerie instantanée (Rocket.Chat) n&apos;est pas active sur cette instance.
+          </p>
+          <p className="text-sm opacity-70">
+            Pour l&apos;activer en local :{" "}
+            <code className="font-mono text-xs bg-wagadu-sand/60 px-1 py-0.5 rounded">
+              cd infra &amp;&amp; docker compose --profile chat up -d
+            </code>{" "}
+            (les variables <code className="font-mono text-xs">ROCKETCHAT_*</code> sont déjà
+            renseignées dans <code className="font-mono text-xs">infra/.env</code>).
           </p>
         </div>
       </div>
@@ -58,16 +87,38 @@ export default function MessageriePage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="font-display text-2xl text-wagadu-brown">Messagerie</h1>
         {sso && (
-          <a href={sso.url} target="_blank" rel="noopener" className="btn-ghost">Ouvrir dans un onglet</a>
+          <a
+            href={sso.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost text-sm"
+          >
+            <Icon name="chat" className="w-4 h-4" /> Ouvrir dans un onglet
+          </a>
         )}
       </div>
+
       {error && <p className="text-sm text-wagadu-terracotta">{error}</p>}
+
       {sso ? (
-        <iframe ref={iframeRef} src={sso.url} title="Messagerie Wagadu"
-          className="w-full rounded-2xl border border-wagadu-sand" style={{ height: "75vh" }} />
+        <div className="relative rounded-2xl overflow-hidden border border-wagadu-sand">
+          {!ready && (
+            <div className="absolute inset-0 grid place-items-center bg-wagadu-ivory/70 z-10">
+              <p className="text-sm text-wagadu-brown animate-fade">Connexion à la messagerie…</p>
+            </div>
+          )}
+          <iframe
+            ref={iframeRef}
+            src={sso.url}
+            title="Messagerie Wagadu"
+            onLoad={pushLogin}
+            className="w-full bg-white"
+            style={{ height: "78vh" }}
+          />
+        </div>
       ) : (
         <p className="text-sm opacity-60">Connexion à la messagerie…</p>
       )}

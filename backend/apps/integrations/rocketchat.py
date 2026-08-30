@@ -7,13 +7,26 @@ dégrader proprement (endpoints 503, UI « non configuré »).
 """
 from __future__ import annotations
 
-import secrets
+import hashlib
+import hmac
 
 import requests
 from django.conf import settings
 from django.core.cache import cache
 
 TIMEOUT = 10
+
+
+def derived_password(user) -> str:
+    """Mot de passe Rocket.Chat déterministe par utilisateur (jamais stocké).
+
+    Dérivé de ``SECRET_KEY`` : reproductible côté serveur pour ré-authentifier
+    l'utilisateur et émettre un jeton SSO, sans conserver de secret en base.
+    """
+    digest = hmac.new(
+        settings.SECRET_KEY.encode(), f"rocketchat:{user.pk}".encode(), hashlib.sha256
+    ).hexdigest()
+    return f"Wh1!{digest[:28]}"  # respecte la politique de complexité RC
 
 
 class RocketChatError(RuntimeError):
@@ -33,7 +46,9 @@ class RocketChatClient:
     def __init__(self):
         if not is_configured():
             raise RocketChatError("Rocket.Chat n'est pas configuré.")
-        self.base = _conf()["URL"].rstrip("/")
+        c = _conf()
+        # Appels serveur→RC : URL interne (réseau Docker) si fournie.
+        self.base = (c.get("API_URL") or c["URL"]).rstrip("/")
         self._auth = None
 
     # --- Authentification admin (jeton mis en cache) ---
@@ -82,25 +97,35 @@ class RocketChatClient:
         ))
 
     # --- Utilisateurs ---
-    def upsert_user(self, *, email: str, name: str, username: str) -> dict:
+    def upsert_user(self, *, email: str, name: str, username: str, password: str) -> dict:
+        """Crée le compte RC ou aligne son mot de passe sur `password` (dérivé)."""
         existing = requests.get(
             f"{self.base}/api/v1/users.info", params={"username": username},
             headers=self._headers(), timeout=TIMEOUT,
         )
         if existing.ok and existing.json().get("success"):
-            return existing.json()["user"]
+            user = existing.json()["user"]
+            self._post("users.update", {
+                "userId": user["_id"],
+                "data": {"password": password, "verified": True, "requirePasswordChange": False},
+            })
+            return user
         body = self._post("users.create", {
             "email": email, "name": name, "username": username,
-            "password": secrets.token_urlsafe(24),
+            "password": password,
             "requirePasswordChange": False, "verified": True,
             "joinDefaultChannels": True,
         })
         return body["user"]
 
-    def create_personal_token(self, *, user_id: str) -> str:
-        """Jeton d'accès personnel (SSO iframe : loginWithToken côté client)."""
-        body = self._post("users.createToken", {"userId": user_id})
-        return body["data"]["authToken"]
+    def login_token(self, *, username: str, password: str) -> str:
+        """Jeton d'authentification pour l'iframe (`login-with-token` côté client)."""
+        resp = requests.post(
+            f"{self.base}/api/v1/login",
+            json={"user": username, "password": password},
+            timeout=TIMEOUT,
+        )
+        return self._json(resp)["data"]["authToken"]
 
     def set_status(self, *, user_id: str, status: str, message: str = "") -> None:
         self._post("users.setStatus", {"userId": user_id, "status": status, "message": message})

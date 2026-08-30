@@ -6,7 +6,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import record
 
 from .models import ChatAccount, ChatChannel
-from .rocketchat import RocketChatClient, RocketChatError, is_configured
+from .rocketchat import RocketChatClient, RocketChatError, derived_password, is_configured
 
 
 def _username_for(user) -> str:
@@ -24,6 +24,7 @@ def provision_user(user) -> ChatAccount | None:
             email=user.email,
             name=user.get_full_name() or user.email,
             username=_username_for(user),
+            password=derived_password(user),
         )
     except RocketChatError:
         return None
@@ -37,11 +38,11 @@ def provision_user(user) -> ChatAccount | None:
 def issue_sso_token(user) -> dict:
     if not is_configured():
         raise RocketChatError("Messagerie non configurée.")
-    account = getattr(user, "chat_account", None) or provision_user(user)
+    account = provision_user(user)
     if account is None:
         raise RocketChatError("Impossible de provisionner le compte messagerie.")
     client = RocketChatClient()
-    token = client.create_personal_token(user_id=account.rc_user_id)
+    token = client.login_token(username=account.rc_username, password=derived_password(user))
     from django.conf import settings
 
     record(action=AuditAction.LOGIN, module="integrations", actor=user,
