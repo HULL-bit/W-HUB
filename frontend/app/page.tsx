@@ -91,8 +91,8 @@ export default function LandingPage() {
         {/* En-tête transparent */}
         <header className="relative z-10 flex items-center justify-between px-6 md:px-12 py-5">
           <div className="flex items-center gap-3">
-            <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={40} height={40} className="rounded-lg" />
-            <span className="font-display text-xl">Wagadu&nbsp;Hub</span>
+            <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={52} height={52} className="rounded-xl" />
+            <span className="font-display text-2xl">Wagadu&nbsp;Hub</span>
           </div>
           <Link
             href={cta.href}

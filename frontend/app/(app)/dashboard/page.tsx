@@ -50,7 +50,7 @@ export default function DashboardPage() {
   if (w.audit) tiles.push({ icon: "archive", label: "Journal d'audit", value: w.audit.entries_total, sub: w.audit.critical_recent ? `${w.audit.critical_recent} critique(s)` : undefined, href: "/admin/audit", accent: !!w.audit.critical_recent });
 
   return (
-    <div className="space-y-6 wagadu-pattern">
+    <div className="space-y-6">
       {/* Hero */}
       <section className="wagadu-hero-gradient rounded-3xl p-6 md:p-8 text-wagadu-ivory relative overflow-hidden animate-in">
         <div className="relative flex items-center gap-4">

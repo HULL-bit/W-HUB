@@ -79,9 +79,9 @@ export default function LoginPage() {
         </Link>
 
         <form onSubmit={onSubmit} className="relative card w-full max-w-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={34} height={34} className="rounded-lg" />
-            <span className="font-display text-lg text-wagadu-brown">Wagadu&nbsp;Hub</span>
+          <div className="flex items-center gap-3">
+            <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={48} height={48} className="rounded-xl" />
+            <span className="font-display text-xl text-wagadu-brown">Wagadu&nbsp;Hub</span>
           </div>
           <h1 className="font-display text-2xl text-wagadu-brown">Connexion</h1>
 

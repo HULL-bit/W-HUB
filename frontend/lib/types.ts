@@ -6,10 +6,17 @@ export interface Paginated<T> {
 export interface UserRow {
   id: string;
   email: string;
+  first_name: string;
+  last_name: string;
   full_name: string;
+  phone: string;
+  job_title: string;
+  bio: string;
+  avatar: string | null;
   role: number | null;
   role_detail: { slug: string; name: string } | null;
   department: number | null;
+  manager: string | null;
   status: string;
   is_active: boolean;
   is_super_admin: boolean;
