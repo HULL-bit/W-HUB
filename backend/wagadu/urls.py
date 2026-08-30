@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -36,3 +38,8 @@ urlpatterns = [
         name="swagger-ui",
     ),
 ]
+
+# En dev (stockage local), Django sert les fichiers média (avatars…).
+# En production, MinIO/R2 génère ses propres URLs.
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

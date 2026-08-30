@@ -37,31 +37,52 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-dvh grid md:grid-cols-2">
-      <div className="hidden md:flex flex-col justify-between bg-wagadu-bark text-wagadu-ivory p-10 wagadu-branches">
-        <Link href="/" className="flex items-center gap-3">
-          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={44} height={44} className="rounded-lg" />
-          <span className="font-display text-2xl">Wagadu&nbsp;Hub</span>
-        </Link>
-        <div>
-          <Image src="/brand/logo-negatif.png" alt="Wagadu Africa" width={180} height={137} className="mb-6" />
-          <p className="font-display text-4xl leading-tight">
-            La plateforme interne de Wagadu&nbsp;Africa
-          </p>
-          <p className="mt-4 text-wagadu-sand/80 max-w-sm">
-            RH, courrier, tâches, documents et réunions — un seul accès sécurisé,
-            sur ordinateur comme sur mobile.
-          </p>
+    <main className="min-h-dvh md:grid md:grid-cols-[1.1fr_1fr]">
+      {/* ── Visuel plein cadre ────────────────────────────────────── */}
+      <div className="relative hidden md:block">
+        <Image src="/brand/photo-4.jpg" alt="" fill priority sizes="55vw" className="object-cover" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(30,15,4,0.55) 0%, rgba(74,42,18,0.30) 38%, rgba(30,15,4,0.88) 100%)",
+          }}
+          aria-hidden
+        />
+        <div className="relative h-full flex flex-col justify-between p-10 text-wagadu-ivory">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-wagadu-ivory/85 hover:text-wagadu-gold transition-colors"
+          >
+            <span aria-hidden>←</span> Retour à l&apos;accueil
+          </Link>
+          <div>
+            <span className="font-display text-2xl">Wagadu&nbsp;Hub</span>
+            <p className="font-display text-4xl leading-tight mt-3 max-w-md">
+              La plateforme interne de Wagadu&nbsp;Africa
+            </p>
+            <p className="mt-4 text-wagadu-sand/85 max-w-sm">
+              RH, courrier, tâches, documents et réunions — un seul accès sécurisé,
+              sur ordinateur comme sur mobile.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-wagadu-sand/60">Projet Blue-Track</p>
       </div>
 
-      <div className="flex flex-col items-center justify-center p-6 wagadu-branches">
-        <Link href="/" className="md:hidden flex items-center gap-2 mb-6">
-          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={40} height={40} className="rounded-lg" />
-          <span className="font-display text-xl text-wagadu-brown">Wagadu&nbsp;Hub</span>
+      {/* ── Formulaire ────────────────────────────────────────────── */}
+      <div className="relative flex flex-col items-center justify-center p-6 bg-wagadu-ivory wagadu-pattern">
+        <Link
+          href="/"
+          className="md:hidden self-start inline-flex items-center gap-1.5 text-sm text-wagadu-brown mb-6"
+        >
+          <span aria-hidden>←</span> Accueil
         </Link>
-        <form onSubmit={onSubmit} className="card w-full max-w-sm space-y-4">
+
+        <form onSubmit={onSubmit} className="relative card w-full max-w-sm space-y-4">
+          <div className="flex items-center gap-2">
+            <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={34} height={34} className="rounded-lg" />
+            <span className="font-display text-lg text-wagadu-brown">Wagadu&nbsp;Hub</span>
+          </div>
           <h1 className="font-display text-2xl text-wagadu-brown">Connexion</h1>
 
           <div>
@@ -90,6 +111,10 @@ export default function LoginPage() {
             {busy ? "Connexion…" : "Se connecter"}
           </button>
         </form>
+
+        <p className="mt-6 text-xs text-center text-wagadu-ebony/50 max-w-sm">
+          Accès réservé aux membres et collaborateurs de Wagadu&nbsp;Africa.
+        </p>
       </div>
     </main>
   );

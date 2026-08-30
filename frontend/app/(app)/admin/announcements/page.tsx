@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { Paginated } from "@/lib/types";
 import { Announcement } from "@/lib/phase6";
+import { Icon } from "@/components/Icon";
 
 export default function AnnouncementsAdminPage() {
   const list = useApi<Paginated<Announcement>>("/announcements/?all=true");
@@ -52,7 +53,10 @@ export default function AnnouncementsAdminPage() {
         {list.data?.results.map((a) => (
           <div key={a.id} className="py-2 flex justify-between items-start gap-2">
             <div>
-              <p className="font-medium">{a.pinned && "📌 "}{a.title}</p>
+              <p className="font-medium flex items-center gap-1.5">
+                {a.pinned && <Icon name="pin" className="w-3.5 h-3.5 text-wagadu-gold" />}
+                {a.title}
+              </p>
               <p className="text-sm opacity-70">{a.body}</p>
               <p className="text-xs opacity-50 font-mono">
                 {a.author_name} · {new Date(a.publish_at).toLocaleDateString("fr-FR")}

@@ -10,6 +10,7 @@ export interface Me {
   last_name: string;
   role: number | null;
   role_detail: { slug: string; name: string } | null;
+  department: number | null;
   is_super_admin: boolean;
   preferred_language: string;
   timezone: string;
@@ -17,6 +18,16 @@ export interface Me {
   bank_account: string;
   is_2fa_enabled: boolean;
   permissions: string[];
+  avatar: string | null;
+  job_title: string;
+  bio: string;
+  phone: string;
+  secondary_email: string;
+  linkedin_url: string;
+  twitter_url: string;
+  facebook_url: string;
+  website_url: string;
+  whatsapp: string;
 }
 
 interface AuthState {

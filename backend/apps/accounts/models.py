@@ -61,6 +61,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     preferred_language = models.CharField(max_length=5, default="fr")
     timezone = models.CharField(max_length=64, default="Africa/Dakar")
 
+    # Profil public
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
+    job_title = models.CharField(max_length=150, blank=True)
+    bio = models.CharField(max_length=280, blank=True)
+    secondary_email = models.EmailField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+    twitter_url = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    website_url = models.URLField(blank=True)
+    whatsapp = models.CharField(max_length=40, blank=True)
+
     # Libre-service employé
     emergency_contact = models.CharField(max_length=255, blank=True)
     bank_account = models.CharField(max_length=64, blank=True)

@@ -1,11 +1,21 @@
 """Réglages de développement local."""
 # ruff: noqa: F403, F405
 import os
+import sys
 
 from .base import *  # noqa
 
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
+
+# Sous pytest : stockage fichier local, jamais MinIO/S3 — même si infra/.env
+# fournit MINIO_ACCESS_KEY (sinon les tests d'upload bloquent sur un endpoint
+# S3 injoignable depuis l'hôte).
+if "pytest" in sys.modules or os.environ.get("PYTEST_VERSION"):
+    STORAGES = {
+        **STORAGES,
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    }
 
 # Base SQLite par défaut en dev/test pour éviter d'exiger PostgreSQL en local.
 if os.environ.get("USE_SQLITE", "1") == "1":
