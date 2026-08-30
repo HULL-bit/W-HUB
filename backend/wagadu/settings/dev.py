@@ -16,6 +16,13 @@ if "pytest" in sys.modules or os.environ.get("PYTEST_VERSION"):
         **STORAGES,
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     }
+    # Intégrations externes désactivées sous pytest, même si infra/.env les
+    # renseigne — sinon les appels RC/Jitsi bloquent sur un hôte injoignable.
+    WAGADU = {
+        **WAGADU,
+        "ROCKETCHAT": {"URL": "", "API_URL": "", "ADMIN_USER": "", "ADMIN_PASSWORD": ""},
+        "JITSI": {"URL": "", "DOMAIN": "", "APP_ID": "", "APP_SECRET": ""},
+    }
 
 # Base SQLite par défaut en dev/test pour éviter d'exiger PostgreSQL en local.
 if os.environ.get("USE_SQLITE", "1") == "1":

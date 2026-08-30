@@ -6,6 +6,7 @@ import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Paginated } from "@/lib/types";
 import { Employee } from "@/lib/hr";
+import { BackLink } from "@/components/BackLink";
 
 interface Contract {
   id: number; type: string; start_date: string; end_date: string | null;
@@ -40,6 +41,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="space-y-4">
+      <BackLink href="/hr/employees" />
       <h1 className="font-display text-2xl text-wagadu-brown">
         {e.full_name || e.email} <span className="font-mono text-base opacity-60">{e.matricule}</span>
       </h1>

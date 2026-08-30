@@ -10,6 +10,8 @@ import { Icon } from "@/components/Icon";
 export default function AnnouncementsAdminPage() {
   const list = useApi<Paginated<Announcement>>("/announcements/?all=true");
   const [form, setForm] = useState({ title: "", body: "", pinned: true, expires_at: "" });
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", body: "", pinned: false });
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -21,7 +23,20 @@ export default function AnnouncementsAdminPage() {
     list.reload();
   }
 
+  function startEdit(a: Announcement) {
+    setEditId(a.id);
+    setEditForm({ title: a.title, body: a.body, pinned: a.pinned });
+  }
+
+  async function saveEdit() {
+    if (editId == null) return;
+    await api(`/announcements/${editId}/`, { method: "PATCH", body: editForm });
+    setEditId(null);
+    list.reload();
+  }
+
   async function remove(id: number) {
+    if (!confirm("Supprimer définitivement cette annonce ?")) return;
     await api(`/announcements/${id}/`, { method: "DELETE" });
     list.reload();
   }
@@ -51,19 +66,48 @@ export default function AnnouncementsAdminPage() {
 
       <div className="card divide-y divide-wagadu-sand">
         {list.data?.results.map((a) => (
-          <div key={a.id} className="py-2 flex justify-between items-start gap-2">
-            <div>
-              <p className="font-medium flex items-center gap-1.5">
-                {a.pinned && <Icon name="pin" className="w-3.5 h-3.5 text-wagadu-gold" />}
-                {a.title}
-              </p>
-              <p className="text-sm opacity-70">{a.body}</p>
-              <p className="text-xs opacity-50 font-mono">
-                {a.author_name} · {new Date(a.publish_at).toLocaleDateString("fr-FR")}
-                {a.expires_at && ` → ${new Date(a.expires_at).toLocaleDateString("fr-FR")}`}
-              </p>
-            </div>
-            <button className="text-wagadu-terracotta text-xs" onClick={() => remove(a.id)}>Supprimer</button>
+          <div key={a.id} className="py-3">
+            {editId === a.id ? (
+              <div className="space-y-2">
+                <input className="input" value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+                <textarea className="input" rows={3} value={editForm.body}
+                  onChange={(e) => setEditForm({ ...editForm, body: e.target.value })} />
+                <label className="flex items-center gap-1.5 text-sm">
+                  <input type="checkbox" checked={editForm.pinned}
+                    onChange={(e) => setEditForm({ ...editForm, pinned: e.target.checked })} />
+                  Épinglée
+                </label>
+                <div className="flex gap-2">
+                  <button className="btn-primary" onClick={saveEdit}>Enregistrer</button>
+                  <button className="btn-ghost" onClick={() => setEditId(null)}>Annuler</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-wagadu-brown flex items-center gap-1.5">
+                    {a.pinned && <Icon name="pin" className="w-4 h-4 text-wagadu-gold shrink-0" />}
+                    {a.title}
+                  </p>
+                  <p className="text-sm opacity-70 whitespace-pre-wrap">{a.body}</p>
+                  <p className="text-xs opacity-50 font-mono mt-1">
+                    {a.author_name} · {new Date(a.publish_at).toLocaleDateString("fr-FR")}
+                    {a.expires_at && ` → ${new Date(a.expires_at).toLocaleDateString("fr-FR")}`}
+                  </p>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button className="p-1.5 rounded-lg hover:bg-wagadu-sand/60 text-wagadu-brown"
+                    title="Modifier" onClick={() => startEdit(a)}>
+                    <Icon name="pencil" className="w-4 h-4" />
+                  </button>
+                  <button className="p-1.5 rounded-lg hover:bg-wagadu-terracotta/10 text-wagadu-terracotta"
+                    title="Supprimer" onClick={() => remove(a.id)}>
+                    <Icon name="trash" className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { Paginated, Role, UserRow } from "@/lib/types";
 import { DocumentItem, humanSize, openDocumentFile } from "@/lib/documents";
 import { DocumentViewer } from "@/components/DocumentViewer";
+import { BackLink } from "@/components/BackLink";
 
 interface ShareLink {
   id: number; token: string; url: string; expires_at: string | null;
@@ -77,6 +78,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="space-y-4 max-w-3xl">
+      <BackLink href="/documents" />
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="font-display text-2xl text-wagadu-brown">{d.title}</h1>
         <span className="badge bg-wagadu-sand">{d.visibility}</span>

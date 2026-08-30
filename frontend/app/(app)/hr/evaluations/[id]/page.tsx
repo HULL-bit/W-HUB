@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Evaluation } from "@/lib/hrlota";
+import { BackLink } from "@/components/BackLink";
 
 export default function EvaluationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -59,6 +60,7 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <BackLink href="/hr/evaluations" />
       <h1 className="font-display text-2xl text-wagadu-brown">{ev.campaign_name}</h1>
       <p className="text-sm">{ev.employee_name} · {ev.status_display}
         {ev.self_score && ` · auto ${ev.self_score}/5`}
