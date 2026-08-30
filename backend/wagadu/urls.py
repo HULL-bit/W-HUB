@@ -20,6 +20,10 @@ api_v1 = [
     path("", include("apps.agenda.urls")),
     path("", include("apps.meetings.urls")),
     path("", include("apps.integrations.urls")),
+    path("", include("apps.demands.urls")),
+    path("", include("apps.engagement.urls")),
+    path("", include("apps.search.urls")),
+    path("", include("apps.reports.urls")),
 ]
 
 urlpatterns = [

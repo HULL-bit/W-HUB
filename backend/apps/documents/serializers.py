@@ -6,11 +6,22 @@ from .models import (
     Document,
     DocumentDistribution,
     DocumentRecipient,
+    DocumentSignature,
     DocumentVersion,
     DocumentVisibilityRule,
     Folder,
     ShareLink,
 )
+
+
+class DocumentSignatureSerializer(serializers.ModelSerializer):
+    signer_name = serializers.CharField(source="signer.get_full_name", read_only=True)
+    signer_email = serializers.CharField(source="signer.email", read_only=True)
+
+    class Meta:
+        model = DocumentSignature
+        fields = ["id", "version", "signer", "signer_name", "signer_email", "statement", "signed_at"]
+        read_only_fields = fields
 
 
 class FolderSerializer(serializers.ModelSerializer):
@@ -47,6 +58,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     owner_email = serializers.CharField(source="owner.email", read_only=True)
     folder_name = serializers.CharField(source="folder.name", read_only=True)
     is_trashed = serializers.BooleanField(read_only=True)
+    signatures = DocumentSignatureSerializer(many=True, read_only=True)
 
     class Meta:
         model = Document
@@ -54,7 +66,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             "id", "title", "description", "keywords", "folder", "folder_name",
             "owner", "owner_email", "is_in_library", "visibility",
             "current_version", "current_version_detail", "versions",
-            "visibility_rules", "is_trashed", "created_at", "updated_at",
+            "visibility_rules", "signatures", "is_trashed", "created_at", "updated_at",
         ]
         read_only_fields = ["owner", "current_version", "created_at", "updated_at"]
 

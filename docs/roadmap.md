@@ -3,6 +3,9 @@
 Livraison par phases (section 12 du cahier des charges). Une phase est validée
 selon la *Definition of Done* avant de passer à la suivante.
 
+> **Les 6 phases sont livrées.** 159 tests `pytest` + 77 vérifications de bout en
+> bout (`scripts/smoke_test.py`) + `eslint` / `vitest` / `next build` — CI verte.
+
 | Phase | Contenu | État |
 |---|---|---|
 | **1 — Socle technique** | Auth JWT, utilisateurs/rôles/permissions (rôle + exception individuelle), Super Admin, tableau de bord de base, journal d'audit, Docker Compose, CI/CD minimal, `createsuperadmin` | ✅ Livrée |
@@ -10,7 +13,7 @@ selon la *Definition of Done* avant de passer à la suivante.
 | **3 — Tâches** | Création/assignation (individu, sélection, équipe), kanban + calendrier, sous-tâches/checklists, étiquettes, soumission + validation par assigné, fil de commentaires, tâches récurrentes, rappels J-1/J/retard, tableau de bord de performance | ✅ Livrée |
 | **4 — Documents** | Diffusion ciblée (unique / sélection / broadcast) + suivi de lecture par destinataire + relance, bibliothèque commune, dossiers, recherche full-text, versions, visibilité par rôle/département, MinIO, liens de partage externes (mot de passe / expiration / quota), aperçu navigateur, corbeille + purge 30 j | ✅ Livrée |
 | **5 — Communication temps réel** | Intégration Rocket.Chat (SSO par jeton personnel, provisionnement, canaux), réunions Jitsi (lien + JWT organisateur/invités, ordre du jour, CR, sondages, salle d'attente, rappels 15 min), Agenda personnel (feed unifié tâches/réunions/congés, invitations, rappels, vue d'équipe, export/import iCal). Intégrations config-gated. | ✅ Livrée |
-| 6 — Finalisation | Demandes transverses, compléments, exports, tableaux de bord avancés | ⏳ |
+| **6 — Finalisation** | Demandes transverses (achat / mission / remboursement, circuit responsable→admin), exports XLSX partout + PDF des registres, recherche globale transverse, fil d'annonces, sondages internes, résumés e-mail, extraction PDF, export RGPD, signature simple de document, lecteur de documents intégré | ✅ Livrée |
 
 ## Definition of Done (chaque phase)
 
@@ -42,5 +45,9 @@ selon la *Definition of Done* avant de passer à la suivante.
 | Hébergement Jitsi | Instance externe (`JITSI_URL`), JWT si `JITSI_APP_SECRET` | 2026-08-30 |
 | Évènements d'agenda synchronisés | Virtuels, calculés à la volée dans le feed | 2026-08-30 |
 | Enregistrement des réunions | Dépôt manuel post-réunion → Document (pas de Jibri) | 2026-08-30 |
+| Circuit des demandes transverses | Responsable hiérarchique → administrateur (2 niveaux), reconfigurable par type | 2026-08-30 |
+| Export PDF | XLSX partout + PDF pour courrier / demandes / journal d'audit (reportlab) | 2026-08-30 |
+| Extraction texte PDF | `pypdf`, extraction asynchrone à l'upload | 2026-08-30 |
+| Compléments §2.11 reportés post-v1 | Inventaire, projets terrain, formation, i18n complète, invités externes, API OAuth | 2026-08-30 |
 | 2FA | Socle prêt (TOTP activable), enforcement par rôle repoussé en phase 6 | 2026-08-29 |
 | Authentification API | JWT (SimpleJWT) access court + refresh avec blacklist | 2026-08-29 |

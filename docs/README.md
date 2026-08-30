@@ -13,6 +13,7 @@
 | [phase-3-taches.md](phase-3-taches.md) | Détail de la Phase 3 livrée (module Tâches) |
 | [phase-4-documents.md](phase-4-documents.md) | Détail de la Phase 4 livrée (module Documents) |
 | [phase-5-communication.md](phase-5-communication.md) | Détail de la Phase 5 livrée (Rocket.Chat, Jitsi, Agenda) |
+| [phase-6-finalisation.md](phase-6-finalisation.md) | Détail de la Phase 6 livrée (demandes, exports, compléments) |
 | [../scripts/README.md](../scripts/README.md) | Test de bout en bout de l'API (`smoke_test.py`) |
 
 Cahier des charges de référence : `../Cahier_des_charges_Wagadu_Africa.docx`.

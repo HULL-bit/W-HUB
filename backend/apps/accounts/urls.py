@@ -7,6 +7,7 @@ from .views import (
     LoginView,
     LogoutView,
     MeView,
+    PersonalDataExportView,
     TwoFactorView,
     UserViewSet,
 )
@@ -19,6 +20,7 @@ urlpatterns = [
     path("auth/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("auth/me/", MeView.as_view(), name="me"),
+    path("auth/me/export/", PersonalDataExportView.as_view(), name="me-export"),
     path("auth/change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("auth/2fa/<str:step>/", TwoFactorView.as_view(), name="2fa"),
     *router.urls,

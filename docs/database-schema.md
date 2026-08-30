@@ -1,6 +1,64 @@
 # Schéma de la base de données
 
-État après la **Phase 5**. Le schéma s'enrichit à chaque phase.
+État après la **Phase 6** — schéma complet de la version 1.
+
+## Diagramme (Phase 6 — Demandes, annonces, sondages)
+
+```mermaid
+erDiagram
+    REQUEST_TYPE ||--o{ REQUEST : ""
+    VALIDATION_FLOW ||--o{ REQUEST_TYPE : ""
+    REQUEST ||--o| APPROVAL_PROCESS : "GFK"
+    REQUEST ||--o{ REQUEST_ATTACHMENT : ""
+    REQUEST ||--o{ REQUEST_COMMENT : ""
+    USER ||--o{ REQUEST : "requester"
+    POLL ||--o{ POLL_OPTION : ""
+    POLL_OPTION ||--o{ POLL_VOTE : ""
+    USER ||--o{ ANNOUNCEMENT : "author"
+    DOCUMENT ||--o{ DOCUMENT_SIGNATURE : ""
+
+    REQUEST_TYPE {
+        int id PK
+        string code UK
+        json form_schema
+        int flow_id FK
+    }
+    REQUEST {
+        int id PK
+        int type_id FK
+        string reference UK
+        uuid requester_id FK
+        json data
+        string status
+    }
+    ANNOUNCEMENT {
+        int id PK
+        string title
+        bool pinned
+        string audience
+        datetime publish_at
+        datetime expires_at
+    }
+    POLL {
+        int id PK
+        string question
+        bool is_open
+        bool multiple_choice
+    }
+    DOCUMENT_SIGNATURE {
+        int id PK
+        int document_id FK
+        int version_id FK
+        uuid signer_id FK
+        string statement
+        datetime signed_at
+    }
+```
+
+La **recherche globale** (`apps/search`) n'ajoute aucun modèle : elle interroge
+les modèles existants via les mêmes fonctions de visibilité que chaque module.
+
+## Historique
 
 ## Diagramme (Phase 5 — Agenda, Réunions, Messagerie)
 
@@ -391,13 +449,15 @@ organization/0001_initial
 permissions/0001_initial, 0002_seed_catalog, 0003_phase2_catalog
 audit/0001_initial
 notifications/0001_initial
-permissions/0004_phase3_catalog, 0005_phase4_catalog, 0006_phase5_catalog
-validation/0001_initial, 0002_seed_leave_flow
+permissions/0004…0007 (catalogues des phases 3 à 6)
+validation/0001_initial, 0002_seed_leave_flow, 0003_seed_request_flow
 hr/0001_initial, 0002_seed_leave_types_holidays
 correspondence/0001_initial
 tasks/0001_initial
-documents/0001_initial
+documents/0001_initial, 0002_documentsignature
 agenda/0001_initial
 meetings/0001_initial
 integrations/0001_initial
+demands/0001_initial, 0002_seed_request_types
+engagement/0001_initial
 ```

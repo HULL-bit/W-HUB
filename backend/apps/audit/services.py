@@ -161,6 +161,10 @@ AUTO_TRACKED_MODELS: set[str] = set(
             "documents.DocumentVisibilityRule",
             "meetings.Meeting",
             "agenda.CalendarEvent",
+            "demands.Request",
+            "demands.RequestType",
+            "engagement.Announcement",
+            "engagement.Poll",
         },
     )
 )

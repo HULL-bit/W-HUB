@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.http import JsonResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -15,6 +16,7 @@ from apps.audit.services import audit_login, record
 from apps.permissions.drf import HasPermission, IsSuperAdmin
 from apps.permissions.services import effective_permissions
 
+from .data_export import build_personal_export
 from .models import User
 from .serializers import (
     ChangePasswordSerializer,
@@ -76,6 +78,19 @@ class MeView(APIView):
                target=request.user, changes={k: {"after": v} for k, v in serializer.validated_data.items()},
                message="Mise à jour du profil (libre-service)", request=request)
         return Response(MeSerializer(request.user).data)
+
+
+class PersonalDataExportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        payload = build_personal_export(request.user)
+        record(action=AuditAction.EXPORT, module="accounts", actor=request.user,
+               target=request.user, message="Export des données personnelles (RGPD)",
+               request=request)
+        resp = JsonResponse(payload, json_dumps_params={"ensure_ascii": False, "indent": 2})
+        resp["Content-Disposition"] = 'attachment; filename="mes-donnees-wagadu-hub.json"'
+        return resp
 
 
 class ChangePasswordView(APIView):

@@ -6,6 +6,7 @@ import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Paginated, Role, UserRow } from "@/lib/types";
 import { DocumentItem, humanSize, openDocumentFile } from "@/lib/documents";
+import { DocumentViewer } from "@/components/DocumentViewer";
 
 interface ShareLink {
   id: number; token: string; url: string; expires_at: string | null;
@@ -84,9 +85,34 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
       {d.description && <p className="text-sm opacity-80">{d.description}</p>}
 
       <div className="card flex flex-wrap gap-2">
-        <button className="btn-primary" onClick={() => openDocumentFile(d.id, "preview")}>Aperçu</button>
+        <button className="btn-ghost" onClick={() => openDocumentFile(d.id, "preview")}>Ouvrir dans un onglet</button>
         <button className="btn-ghost" onClick={() => openDocumentFile(d.id, "download")}>Télécharger</button>
+        <button className="btn-primary"
+          onClick={() => api(`/documents/${d.id}/sign/`, { method: "POST", body: { statement: "Lu et approuvé" } }).then(doc.reload)}>
+          Signer (lu et approuvé)
+        </button>
       </div>
+
+      {/* Lecteur intégré */}
+      {d.current_version_detail && (
+        <DocumentViewer documentId={d.id}
+          contentType={d.current_version_detail.content_type}
+          filename={d.current_version_detail.original_filename} />
+      )}
+
+      {d.signatures && d.signatures.length > 0 && (
+        <div className="card">
+          <p className="label">Signatures ({d.signatures.length})</p>
+          <ul className="text-sm">
+            {d.signatures.map((s) => (
+              <li key={s.id} className="font-mono text-xs">
+                {s.signer_name || s.signer_email} — {new Date(s.signed_at).toLocaleString("fr-FR")}
+                {s.statement && ` · « ${s.statement} »`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Versions */}
       <div className="card">

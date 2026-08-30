@@ -66,6 +66,10 @@ PERMISSION_CATALOG: list[tuple[str, str, str]] = [
     # --- Demandes transverses (phase 6) ---
     ("requests.submit", "Soumettre une demande", MODULE_REQUESTS),
     ("requests.validate", "Valider une étape de demande", MODULE_REQUESTS),
+    ("requests.manage_types", "Paramétrer les types de demande", MODULE_REQUESTS),
+    # --- Compléments (phase 6) ---
+    ("engagement.announce", "Publier une annonce interne", MODULE_PLATFORM),
+    ("reports.export", "Exporter les rapports transverses", MODULE_PLATFORM),
 ]
 
 ALL_PERMISSION_CODES = {code for code, _, _ in PERMISSION_CATALOG}
@@ -108,6 +112,8 @@ SYSTEM_ROLES: dict[str, dict] = {
             "hr.leave.validate",
             "requests.submit",
             "requests.validate",
+            "engagement.announce",
+            "reports.export",
             "organization.view",
         ],
     },
@@ -133,6 +139,8 @@ SYSTEM_ROLES: dict[str, dict] = {
             "mail.export",
             "requests.submit",
             "requests.validate",
+            "engagement.announce",
+            "reports.export",
             "organization.view",
         ],
     },
@@ -175,6 +183,9 @@ SYSTEM_ROLES: dict[str, dict] = {
             "hr.leave.validate",
             "requests.submit",
             "requests.validate",
+            "requests.manage_types",
+            "engagement.announce",
+            "reports.export",
         ],
     },
 }

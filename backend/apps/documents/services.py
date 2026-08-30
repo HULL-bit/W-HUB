@@ -65,6 +65,16 @@ def add_version(document: Document, *, file, actor, note: str = "") -> DocumentV
     version.checksum = checksum  # transitoire, non persisté (pas de champ dédié)
     document.current_version = version
     document.save(update_fields=["current_version", "updated_at"])
+
+    # Extraction du texte PDF en tâche de fond (recherche full-text).
+    if not version.text_content and (
+        content_type == "application/pdf"
+        or version.original_filename.lower().endswith(".pdf")
+    ):
+        from .tasks import extract_pdf_text
+
+        transaction.on_commit(lambda: extract_pdf_text.delay(version.id))
+
     if next_number > 1:
         record(action=AuditAction.UPDATE, module="documents", actor=actor, target=document,
                message=f"Nouvelle version v{next_number}",
