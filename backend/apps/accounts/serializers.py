@@ -16,6 +16,22 @@ PROFILE_FIELDS = [
 ]
 
 
+class RelativeImageField(serializers.ImageField):
+    """URL toujours relative à MEDIA_URL (jamais absolue).
+
+    Évite les URLs `http://backend:8000/...` injoignables quand l'API est
+    proxifiée (Next rewrite) ; le navigateur résout `/media/...` sur son origine.
+    """
+
+    def to_representation(self, value):
+        if not value:
+            return None
+        try:
+            return value.url
+        except ValueError:
+            return None
+
+
 class RoleBriefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     slug = serializers.CharField()
@@ -25,6 +41,7 @@ class RoleBriefSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     role_detail = RoleBriefSerializer(source="role", read_only=True)
     full_name = serializers.CharField(source="get_full_name", read_only=True)
+    avatar = RelativeImageField(read_only=True)
 
     class Meta:
         model = User
@@ -39,6 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserWriteSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
+    avatar = RelativeImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -96,7 +114,7 @@ class SelfServiceSerializer(serializers.ModelSerializer):
 class MeSerializer(serializers.ModelSerializer):
     role_detail = RoleBriefSerializer(source="role", read_only=True)
     permissions = serializers.SerializerMethodField()
-    avatar = serializers.ImageField(read_only=True)
+    avatar = RelativeImageField(read_only=True)
 
     class Meta:
         model = User
@@ -120,6 +138,7 @@ class MemberSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     role_name = serializers.CharField(source="role.name", read_only=True)
     department_name = serializers.CharField(source="department.name", read_only=True)
+    avatar = RelativeImageField(read_only=True)
 
     class Meta:
         model = User
