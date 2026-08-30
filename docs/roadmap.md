@@ -9,7 +9,7 @@ selon la *Definition of Done* avant de passer à la suivante.
 | **2 — RH & Courrier** | App `validation` (circuits réutilisables), fiches employés + contrats + carrière + médical, congés (solde temps réel, validation manager→RH), module Courrier (numérotation auto, affectation, traçabilité, accusé, export) | ✅ Livrée |
 | **3 — Tâches** | Création/assignation (individu, sélection, équipe), kanban + calendrier, sous-tâches/checklists, étiquettes, soumission + validation par assigné, fil de commentaires, tâches récurrentes, rappels J-1/J/retard, tableau de bord de performance | ✅ Livrée |
 | **4 — Documents** | Diffusion ciblée (unique / sélection / broadcast) + suivi de lecture par destinataire + relance, bibliothèque commune, dossiers, recherche full-text, versions, visibilité par rôle/département, MinIO, liens de partage externes (mot de passe / expiration / quota), aperçu navigateur, corbeille + purge 30 j | ✅ Livrée |
-| 5 — Communication temps réel | Rocket.Chat + Jitsi (SSO), Agenda personnel | ⏳ |
+| **5 — Communication temps réel** | Intégration Rocket.Chat (SSO par jeton personnel, provisionnement, canaux), réunions Jitsi (lien + JWT organisateur/invités, ordre du jour, CR, sondages, salle d'attente, rappels 15 min), Agenda personnel (feed unifié tâches/réunions/congés, invitations, rappels, vue d'équipe, export/import iCal). Intégrations config-gated. | ✅ Livrée |
 | 6 — Finalisation | Demandes transverses, compléments, exports, tableaux de bord avancés | ⏳ |
 
 ## Definition of Done (chaque phase)
@@ -38,5 +38,9 @@ selon la *Definition of Done* avant de passer à la suivante.
 | Suivi de lecture d'une diffusion générale | Une ligne par employé (snapshot à l'envoi) | 2026-08-29 |
 | Recherche « contenu » des documents | Extraction txt/md/csv maintenant, PDF différé (Phase 6) | 2026-08-29 |
 | Rétention de la corbeille documentaire | 30 jours puis purge | 2026-08-29 |
+| SSO Rocket.Chat | Jeton d'accès personnel via API admin RC (`login-with-token`) | 2026-08-30 |
+| Hébergement Jitsi | Instance externe (`JITSI_URL`), JWT si `JITSI_APP_SECRET` | 2026-08-30 |
+| Évènements d'agenda synchronisés | Virtuels, calculés à la volée dans le feed | 2026-08-30 |
+| Enregistrement des réunions | Dépôt manuel post-réunion → Document (pas de Jibri) | 2026-08-30 |
 | 2FA | Socle prêt (TOTP activable), enforcement par rôle repoussé en phase 6 | 2026-08-29 |
 | Authentification API | JWT (SimpleJWT) access court + refresh avec blacklist | 2026-08-29 |

@@ -61,6 +61,8 @@ PERMISSION_CATALOG: list[tuple[str, str, str]] = [
     ("documents.share_external", "Générer des liens de partage externes", MODULE_DOCUMENTS),
     # --- Réunions (phase 5) ---
     ("meetings.create", "Créer une réunion", MODULE_MEETINGS),
+    ("meetings.manage_all", "Superviser toutes les réunions", MODULE_MEETINGS),
+    ("chat.admin", "Administrer la messagerie (canaux)", MODULE_PLATFORM),
     # --- Demandes transverses (phase 6) ---
     ("requests.submit", "Soumettre une demande", MODULE_REQUESTS),
     ("requests.validate", "Valider une étape de demande", MODULE_REQUESTS),
@@ -166,6 +168,8 @@ SYSTEM_ROLES: dict[str, dict] = {
             "mail.register",
             "mail.assign",
             "meetings.create",
+            "meetings.manage_all",
+            "chat.admin",
             "hr.view",
             "hr.manage",
             "hr.leave.validate",

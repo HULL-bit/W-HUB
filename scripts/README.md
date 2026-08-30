@@ -2,9 +2,10 @@
 
 ## `smoke_test.py`
 
-Test de bout en bout de l'API live (phases 1 à 4) : authentification, rôles &
+Test de bout en bout de l'API live (phases 1 à 5) : authentification, rôles &
 permissions, journal d'audit, congés (circuit manager→RH), courrier, tâches,
-documents (diffusion, suivi de lecture, liens externes, corbeille).
+documents (diffusion, suivi de lecture, liens externes, corbeille), agenda &
+feed unifié, réunions Jitsi + sondages, statut des intégrations.
 
 ```bash
 cd backend
@@ -18,4 +19,4 @@ USE_SQLITE=1 DJANGO_SETTINGS_MODULE=wagadu.settings.dev \
 python ../scripts/smoke_test.py
 ```
 
-Sortie attendue : `48 PASS / 0 FAIL`.
+Sortie attendue : `60 PASS / 0 FAIL`.

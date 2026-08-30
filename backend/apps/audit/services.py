@@ -159,6 +159,8 @@ AUTO_TRACKED_MODELS: set[str] = set(
             "tasks.RecurringTaskTemplate",
             "documents.Document",
             "documents.DocumentVisibilityRule",
+            "meetings.Meeting",
+            "agenda.CalendarEvent",
         },
     )
 )

@@ -1,6 +1,54 @@
 # Schéma de la base de données
 
-État après la **Phase 4**. Le schéma s'enrichit à chaque phase.
+État après la **Phase 5**. Le schéma s'enrichit à chaque phase.
+
+## Diagramme (Phase 5 — Agenda, Réunions, Messagerie)
+
+```mermaid
+erDiagram
+    USER ||--o{ CALENDAR_EVENT : "owner"
+    CALENDAR_EVENT ||--o{ EVENT_ATTENDEE : ""
+    CALENDAR_EVENT ||--o{ EVENT_REMINDER : ""
+    USER ||--o{ MEETING : "organizer"
+    MEETING ||--o{ MEETING_PARTICIPANT : ""
+    MEETING ||--o{ MEETING_POLL : ""
+    MEETING_POLL ||--o{ MEETING_POLL_OPTION : ""
+    MEETING_POLL_OPTION ||--o{ MEETING_POLL_VOTE : ""
+    MEETING ||--o| DOCUMENT : "recording_document / minutes_document"
+    USER ||--o| CHAT_ACCOUNT : ""
+    CHAT_CHANNEL }o--o| TEAM : ""
+    CHAT_CHANNEL }o--o| DEPARTMENT : ""
+
+    CALENDAR_EVENT {
+        int id PK
+        uuid owner_id FK
+        string type "personal|task|meeting|leave|reminder"
+        string visibility "private|busy|shared"
+        datetime start
+        datetime end
+        string recurrence_rule
+    }
+    MEETING {
+        int id PK
+        uuid organizer_id FK
+        string room_slug UK
+        string access "invited|open"
+        bool lobby
+        text agenda
+        text minutes
+        string status
+    }
+    CHAT_ACCOUNT {
+        int id PK
+        uuid user_id FK
+        string rc_user_id
+        string rc_username
+    }
+```
+
+Le **feed agenda** ne matérialise rien : `agenda/feed.build_feed()` fusionne
+`CalendarEvent` avec les tâches (`Task.due_at`), les réunions (`Meeting`) et les
+congés approuvés (`LeaveRequest`) en items virtuels au moment de la requête.
 
 ## Diagramme (Phase 4 — Documents)
 
@@ -343,10 +391,13 @@ organization/0001_initial
 permissions/0001_initial, 0002_seed_catalog, 0003_phase2_catalog
 audit/0001_initial
 notifications/0001_initial
-permissions/0004_phase3_catalog, 0005_phase4_catalog
+permissions/0004_phase3_catalog, 0005_phase4_catalog, 0006_phase5_catalog
 validation/0001_initial, 0002_seed_leave_flow
 hr/0001_initial, 0002_seed_leave_types_holidays
 correspondence/0001_initial
 tasks/0001_initial
 documents/0001_initial
+agenda/0001_initial
+meetings/0001_initial
+integrations/0001_initial
 ```

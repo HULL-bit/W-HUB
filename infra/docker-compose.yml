@@ -98,7 +98,49 @@ services:
     ports:
       - "9001:9001"
 
+  # ─── Messagerie Rocket.Chat (profil « chat » — non démarré par défaut) ───
+  # docker compose --profile chat up -d
+  # Puis renseigner ROCKETCHAT_URL / ROCKETCHAT_ADMIN_* dans .env.
+  mongodb:
+    image: mongo:6
+    profiles: ["chat"]
+    restart: unless-stopped
+    command: mongod --replSet rs0 --oplogSize 128
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+
+  mongo-init:
+    image: mongo:6
+    profiles: ["chat"]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["bash", "-c", "mongosh --host mongodb --eval 'try{rs.status()}catch(e){rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]})}'"]
+
+  rocketchat:
+    image: rocketchat/rocket.chat:6.13.0
+    profiles: ["chat"]
+    restart: unless-stopped
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/rocketchat?replicaSet=rs0
+      MONGO_OPLOG_URL: mongodb://mongodb:27017/local?replicaSet=rs0
+      ROOT_URL: ${ROCKETCHAT_URL:-http://localhost:3000}
+      PORT: "3000"
+    depends_on:
+      - mongo-init
+    ports:
+      - "3000:3000"
+
+  # Jitsi : instance déjà hébergée (JITSI_URL). Pour le self-hoster, ajouter ici
+  # les services jitsi/web, prosody, jicofo, jvb (images officielles jitsi/*).
+
 volumes:
   pgdata:
   miniodata:
+  mongodata:
   backend_static:
