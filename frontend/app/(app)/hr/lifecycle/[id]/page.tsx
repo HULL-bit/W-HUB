@@ -4,6 +4,7 @@ import { use } from "react";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { CATEGORY_LABEL, LifecycleProcess } from "@/lib/hrlota";
+import { BackLink } from "@/components/BackLink";
 
 export default function LifecycleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,6 +24,7 @@ export default function LifecycleDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <BackLink href="/hr/lifecycle" />
       <h1 className="font-display text-2xl text-wagadu-brown">
         {p.kind_display} — {p.employee_name}
       </h1>

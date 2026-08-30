@@ -6,6 +6,7 @@ import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Paginated, UserRow } from "@/lib/types";
 import { MailItem } from "@/lib/hr";
+import { BackLink } from "@/components/BackLink";
 
 const STATUSES = ["received", "assigned", "in_progress", "processed", "archived"];
 
@@ -25,6 +26,7 @@ export default function MailDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <BackLink href="/mail" />
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="font-display text-2xl text-wagadu-brown">{mail.reference}</h1>
         <span className="badge bg-wagadu-sand">{mail.status_display}</span>

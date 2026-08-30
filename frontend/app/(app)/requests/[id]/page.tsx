@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { DemandRequest, REQUEST_STATUS_STYLE } from "@/lib/phase6";
+import { BackLink } from "@/components/BackLink";
 
 export default function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -30,6 +31,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <BackLink href="/requests" />
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="font-display text-2xl text-wagadu-brown">{r.reference}</h1>
         <span className={`badge ${REQUEST_STATUS_STYLE[r.status]}`}>{r.status_display}</span>

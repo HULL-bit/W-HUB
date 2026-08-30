@@ -125,32 +125,32 @@ export function Sidebar() {
         </button>
       </div>
 
-      <aside className={`${open ? "block" : "hidden"} md:block w-full md:w-64 md:shrink-0 md:min-h-dvh
+      <aside className={`${open ? "block" : "hidden"} md:block w-full md:w-72 md:shrink-0 md:min-h-dvh
         bg-wagadu-bark text-wagadu-ivory md:flex md:flex-col wagadu-branches`}>
-        <Link href="/dashboard" className="hidden md:flex p-5 items-center gap-2 border-b border-white/10">
-          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={34} height={34} className="rounded-lg" />
-          <span className="font-display text-xl">Wagadu&nbsp;Hub</span>
+        <Link href="/dashboard" className="hidden md:flex p-5 items-center gap-2.5 border-b border-white/10">
+          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={38} height={38} className="rounded-lg" />
+          <span className="font-display text-2xl">Wagadu&nbsp;Hub</span>
         </Link>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
           {groups.map((g) => (
             <div key={g.id}>
               {g.label && (
                 <button onClick={() => toggle(g.id)}
-                  className="w-full flex items-center justify-between px-2 pt-3 pb-1 text-[11px]
-                    uppercase tracking-wider text-wagadu-sand/50 hover:text-wagadu-sand/80">
+                  className="w-full flex items-center justify-between px-2 pt-4 pb-1.5 text-xs
+                    font-semibold uppercase tracking-wider text-wagadu-sand/60 hover:text-wagadu-sand">
                   <span>{g.label}</span>
-                  <span className="text-xs">{collapsed[g.id] ? "▸" : "▾"}</span>
+                  <span>{collapsed[g.id] ? "▸" : "▾"}</span>
                 </button>
               )}
               {!collapsed[g.id] && g.items.map((i) => {
                 const active = pathname === i.href || pathname.startsWith(i.href + "/");
                 return (
                   <Link key={i.href} href={i.href} onClick={() => setOpen(false)}
-                    className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors ${
-                      active ? "bg-wagadu-gold text-wagadu-ebony font-medium" : "hover:bg-white/10"
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors ${
+                      active ? "bg-wagadu-gold text-wagadu-ebony font-semibold" : "font-medium hover:bg-white/10"
                     }`}>
-                    <Icon name={i.icon} className="w-[18px] h-[18px] shrink-0 opacity-90" />
+                    <Icon name={i.icon} className="w-5 h-5 shrink-0 opacity-90" />
                     <span className="truncate">{i.label}</span>
                   </Link>
                 );
@@ -161,16 +161,16 @@ export function Sidebar() {
 
         <Link href="/account" onClick={() => setOpen(false)}
           className="m-3 mt-0 flex items-center gap-3 rounded-xl p-3 bg-white/5 hover:bg-white/10 transition-colors">
-          <Avatar user={me} size={38} />
+          <Avatar user={me} size={42} />
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{me?.first_name || me?.email}</p>
-            <p className="text-xs text-wagadu-sand/60 truncate">
+            <p className="text-[15px] font-semibold truncate">{me?.first_name || me?.email}</p>
+            <p className="text-[13px] text-wagadu-sand/70 truncate">
               {me?.is_super_admin ? "Super Administrateur" : me?.role_detail?.name ?? me?.job_title ?? "Collaborateur"}
             </p>
           </div>
         </Link>
         <button onClick={logout}
-          className="mx-3 mb-3 btn-ghost text-wagadu-ivory border-white/25 hover:bg-white/10 w-[calc(100%-1.5rem)] text-sm">
+          className="mx-3 mb-3 btn-ghost text-wagadu-ivory border-white/25 hover:bg-white/10 w-[calc(100%-1.5rem)]">
           Se déconnecter
         </button>
       </aside>

@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { PRIORITY_STYLE, TASK_COLUMNS, Task } from "@/lib/tasks";
+import { BackLink } from "@/components/BackLink";
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -45,6 +46,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-4 max-w-3xl">
+      <BackLink href="/tasks" />
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
           <h1 className="font-display text-2xl text-wagadu-brown">{task.title}</h1>

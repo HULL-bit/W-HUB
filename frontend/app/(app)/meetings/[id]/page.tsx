@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Meeting } from "@/lib/comms";
+import { BackLink } from "@/components/BackLink";
 
 interface JoinInfo {
   url: string;
@@ -55,6 +56,7 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <BackLink href="/meetings" />
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="font-display text-2xl text-wagadu-brown">{m.title}</h1>
         <span className="badge bg-wagadu-sand">{m.status_display}</span>
