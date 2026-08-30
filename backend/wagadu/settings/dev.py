@@ -34,6 +34,15 @@ if os.environ.get("USE_SQLITE", "1") == "1":
 CELERY_TASK_ALWAYS_EAGER = True
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# En dev, stockage fichier local par défaut (les URLs MinIO présignées pointent
+# vers http://minio:9000, injoignable depuis le navigateur → avatars cassés).
+# USE_MINIO=1 pour tester réellement le stockage objet.
+if os.environ.get("USE_MINIO", "0") != "1":
+    STORAGES = {
+        **STORAGES,
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    }
+
 # Front local (ports variables) : CORS ouvert en développement uniquement.
 CORS_ALLOW_ALL_ORIGINS = True
 
