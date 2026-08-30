@@ -21,6 +21,8 @@ const NAV: { href: string; label: string; perm?: string }[] = [
   { href: "/leave/validate", label: "Congés à valider", perm: "hr.leave.validate" },
   { href: "/mail", label: "Courrier", perm: "mail.view" },
   { href: "/hr", label: "RH", perm: "hr.view" },
+  { href: "/hr/lifecycle", label: "Intégrations / Départs", perm: "hr.view" },
+  { href: "/hr/evaluations", label: "Évaluations" },
   { href: "/account", label: "Mon compte" },
   { href: "/admin/users", label: "Comptes", perm: "accounts.view" },
   { href: "/admin/roles", label: "Rôles & permissions", perm: "accounts.view" },

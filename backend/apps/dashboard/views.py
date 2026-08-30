@@ -140,6 +140,21 @@ class DashboardView(APIView):
             status="in_review"
         ).count()
 
+        from apps.hr.models import Evaluation, LifecycleProcess
+
+        my_onboarding = LifecycleProcess.objects.filter(
+            employee__user=user, kind="onboarding", status="in_progress"
+        ).first()
+        if my_onboarding:
+            data["widgets"]["my_onboarding"] = {
+                "id": my_onboarding.id, **my_onboarding.progress,
+            }
+        data["widgets"]["my_evaluation_todo"] = Evaluation.objects.filter(
+            employee__user=user, status="pending"
+        ).count() + Evaluation.objects.filter(
+            evaluator=user, status="self_assessed"
+        ).count()
+
     @staticmethod
     def _shortcuts(perms: set[str]) -> list[dict]:
         catalog = [

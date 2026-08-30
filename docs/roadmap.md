@@ -3,8 +3,10 @@
 Livraison par phases (section 12 du cahier des charges). Une phase est validée
 selon la *Definition of Done* avant de passer à la suivante.
 
-> **Les 6 phases sont livrées.** 159 tests `pytest` + 77 vérifications de bout en
+> **Les 6 phases du CDC sont livrées.** Phase 7 (évolutions post-v1) en cours —
+> Lot A (compléments RH) livré. 171 tests `pytest` + 86 vérifications de bout en
 > bout (`scripts/smoke_test.py`) + `eslint` / `vitest` / `next build` — CI verte.
+> Détail : [phase-7-evolutions.md](phase-7-evolutions.md).
 
 | Phase | Contenu | État |
 |---|---|---|

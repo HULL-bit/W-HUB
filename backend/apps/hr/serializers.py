@@ -127,3 +127,125 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
     def get_approval(self, obj):
         process = get_process(obj)
         return ApprovalProcessSerializer(process).data if process else None
+
+
+# ─── Phase 7 Lot A : onboarding / offboarding / évaluations ───────────
+
+from .models import (  # noqa: E402
+    Evaluation,
+    EvaluationAnswer,
+    EvaluationCampaign,
+    EvaluationForm,
+    EvaluationQuestion,
+    LifecycleItem,
+    LifecycleProcess,
+    LifecycleTemplate,
+    LifecycleTemplateItem,
+)
+
+
+class LifecycleTemplateItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LifecycleTemplateItem
+        fields = ["id", "template", "label", "category", "responsible_role", "order", "due_offset_days"]
+
+
+class LifecycleTemplateSerializer(serializers.ModelSerializer):
+    items = LifecycleTemplateItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LifecycleTemplate
+        fields = ["id", "kind", "name", "description", "is_default", "items", "created_at"]
+        read_only_fields = ["created_at"]
+
+
+class LifecycleItemSerializer(serializers.ModelSerializer):
+    responsible_email = serializers.CharField(source="responsible.email", read_only=True)
+
+    class Meta:
+        model = LifecycleItem
+        fields = [
+            "id", "process", "label", "category", "responsible_role", "responsible",
+            "responsible_email", "due_date", "is_done", "done_by", "done_at", "notes",
+            "document", "order",
+        ]
+        read_only_fields = ["done_by", "done_at"]
+
+
+class LifecycleProcessSerializer(serializers.ModelSerializer):
+    items = LifecycleItemSerializer(many=True, read_only=True)
+    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    matricule = serializers.CharField(source="employee.matricule", read_only=True)
+    progress = serializers.DictField(read_only=True)
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+
+    class Meta:
+        model = LifecycleProcess
+        fields = [
+            "id", "kind", "kind_display", "employee", "employee_name", "matricule",
+            "template", "reference_date", "status", "progress", "items",
+            "created_at", "completed_at",
+        ]
+        read_only_fields = fields
+
+
+class EvaluationQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EvaluationQuestion
+        fields = ["id", "form", "section", "label", "type", "weight", "order"]
+
+
+class EvaluationFormSerializer(serializers.ModelSerializer):
+    questions = EvaluationQuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = EvaluationForm
+        fields = ["id", "name", "description", "is_active", "questions", "created_at"]
+        read_only_fields = ["created_at"]
+
+
+class EvaluationCampaignSerializer(serializers.ModelSerializer):
+    form_name = serializers.CharField(source="form.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    evaluation_count = serializers.IntegerField(source="evaluations.count", read_only=True)
+
+    class Meta:
+        model = EvaluationCampaign
+        fields = [
+            "id", "name", "form", "form_name", "period_start", "period_end",
+            "department", "status", "status_display", "evaluation_count", "created_at",
+        ]
+        read_only_fields = ["status", "created_at"]
+
+
+class EvaluationAnswerSerializer(serializers.ModelSerializer):
+    question_label = serializers.CharField(source="question.label", read_only=True)
+    question_type = serializers.CharField(source="question.type", read_only=True)
+    section = serializers.CharField(source="question.section", read_only=True)
+
+    class Meta:
+        model = EvaluationAnswer
+        fields = ["id", "question", "question_label", "question_type", "section",
+                  "self_value", "manager_value", "comment"]
+        read_only_fields = fields
+
+
+class EvaluationSerializer(serializers.ModelSerializer):
+    answers = EvaluationAnswerSerializer(many=True, read_only=True)
+    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    campaign_name = serializers.CharField(source="campaign.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    form = serializers.IntegerField(source="campaign.form_id", read_only=True)
+    questions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Evaluation
+        fields = [
+            "id", "campaign", "campaign_name", "employee", "employee_name", "evaluator",
+            "status", "status_display", "self_score", "manager_score", "overall_comment",
+            "employee_comment", "form", "questions", "answers", "created_at", "finalized_at",
+        ]
+        read_only_fields = fields
+
+    def get_questions(self, obj):
+        return EvaluationQuestionSerializer(obj.campaign.form.questions.all(), many=True).data
