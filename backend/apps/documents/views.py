@@ -172,6 +172,27 @@ class DocumentViewSet(viewsets.ModelViewSet):
         mark_document_read(self.get_object(), user=request.user)
         return Response({"detail": "Marqué comme lu."})
 
+    @action(detail=True, methods=["post"])
+    def sign(self, request, pk=None):
+        from .models import DocumentSignature
+
+        document = self.get_object()
+        version = document.current_version
+        if not version:
+            raise ValidationError("Aucune version à signer.")
+        xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        ip = xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR")
+        sig, created = DocumentSignature.objects.get_or_create(
+            document=document, version=version, signer=request.user,
+            defaults={"statement": request.data.get("statement", "Lu et approuvé"), "ip_address": ip},
+        )
+        if created:
+            mark_document_read(document, user=request.user)
+            record(action=AuditAction.VALIDATE, module="documents", actor=request.user,
+                   target=document, message=f"Signature simple v{version.version_number}",
+                   request=request)
+        return Response(DocumentSerializer(self._fresh(document.pk)).data)
+
     @action(detail=True, methods=["put"])
     def visibility(self, request, pk=None):
         document = self.get_object()

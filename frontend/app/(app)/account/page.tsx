@@ -87,8 +87,30 @@ export default function AccountPage() {
         </p>
         <TwoFactor enabled={!!me?.is_2fa_enabled} onChange={refreshMe} />
       </div>
+
+      <div className="card space-y-2">
+        <p className="label">Mes données personnelles</p>
+        <p className="text-sm opacity-70">
+          Téléchargez l&apos;ensemble des données vous concernant détenues par la plateforme (format JSON).
+        </p>
+        <button className="btn-ghost" onClick={exportMyData}>Exporter mes données</button>
+      </div>
     </div>
   );
+
+  async function exportMyData() {
+    const { tokenStore } = await import("@/lib/api");
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+    const res = await fetch(`${base}/auth/me/export/`, {
+      headers: { Authorization: `Bearer ${tokenStore.access}` },
+    });
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mes-donnees-wagadu-hub.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }
 
 function TwoFactor({ enabled, onChange }: { enabled: boolean; onChange: () => Promise<void> }) {

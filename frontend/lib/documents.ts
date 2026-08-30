@@ -13,6 +13,14 @@ export interface DocVersion {
   uploaded_at: string;
 }
 
+export interface DocSignature {
+  id: number;
+  signer_name: string;
+  signer_email: string;
+  statement: string;
+  signed_at: string;
+}
+
 export interface VisibilityRule {
   id: number;
   subject_type: string;
@@ -33,6 +41,7 @@ export interface DocumentItem {
   current_version_detail: DocVersion | null;
   versions: DocVersion[];
   visibility_rules: VisibilityRule[];
+  signatures: DocSignature[];
   is_trashed: boolean;
   updated_at: string;
 }

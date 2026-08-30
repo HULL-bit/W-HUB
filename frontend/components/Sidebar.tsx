@@ -13,6 +13,10 @@ const NAV: { href: string; label: string; perm?: string }[] = [
   { href: "/agenda", label: "Agenda" },
   { href: "/meetings", label: "Réunions" },
   { href: "/messagerie", label: "Messagerie" },
+  { href: "/requests", label: "Mes demandes" },
+  { href: "/requests/validate", label: "Demandes à valider", perm: "requests.validate" },
+  { href: "/polls", label: "Sondages" },
+  { href: "/reports", label: "Rapports", perm: "reports.export" },
   { href: "/leave", label: "Mes congés" },
   { href: "/leave/validate", label: "Congés à valider", perm: "hr.leave.validate" },
   { href: "/mail", label: "Courrier", perm: "mail.view" },
@@ -21,6 +25,7 @@ const NAV: { href: string; label: string; perm?: string }[] = [
   { href: "/admin/users", label: "Comptes", perm: "accounts.view" },
   { href: "/admin/roles", label: "Rôles & permissions", perm: "accounts.view" },
   { href: "/admin/permission-overrides", label: "Exceptions", perm: "accounts.manage_permissions" },
+  { href: "/admin/announcements", label: "Annonces", perm: "engagement.announce" },
   { href: "/admin/validation-flows", label: "Circuits de validation", perm: "platform.manage_validation_flows" },
   { href: "/admin/audit", label: "Journal d'audit", perm: "audit.view" },
 ];

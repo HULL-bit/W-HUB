@@ -20,6 +20,9 @@ interface Dashboard {
     my_tasks_to_review?: number;
     my_documents_unread?: number;
     next_meetings?: { id: number; title: string; start: string }[];
+    announcements?: { id: number; title: string; body: string; pinned: boolean; publish_at: string }[];
+    open_polls?: number;
+    my_requests_pending?: number;
   };
 }
 
@@ -113,6 +116,30 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
+
+          {!!data.widgets.announcements?.length && (
+            <section className="card wagadu-branches">
+              <p className="label">Annonces</p>
+              <ul className="divide-y divide-wagadu-sand">
+                {data.widgets.announcements.map((a) => (
+                  <li key={a.id} className="py-2">
+                    <p className="font-medium text-wagadu-brown">
+                      {a.pinned && "📌 "}{a.title}
+                    </p>
+                    <p className="text-sm opacity-80 whitespace-pre-wrap">{a.body}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {!!data.widgets.my_requests_pending && (
+            <section className="card">
+              <p className="label">Mes demandes en cours de validation</p>
+              <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_requests_pending}</p>
+              <Link href="/requests" className="text-sm text-wagadu-terracotta">Voir</Link>
+            </section>
+          )}
 
           {!!data.widgets.next_meetings?.length && (
             <section className="card">

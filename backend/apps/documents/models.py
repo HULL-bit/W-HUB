@@ -217,6 +217,29 @@ class DocumentRecipient(models.Model):
             self.save(update_fields=["is_read", "read_at"])
 
 
+class DocumentSignature(models.Model):
+    """Signature simple de validation interne (§1.5 / §2.11) — pas de valeur
+    légale certifiée, une trace horodatée d'approbation."""
+
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="signatures")
+    version = models.ForeignKey(DocumentVersion, on_delete=models.CASCADE)
+    signer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    statement = models.CharField(max_length=255, blank=True)
+    signed_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-signed_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["version", "signer"], name="uniq_document_signature"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.signer} — {self.document_id} v{self.version.version_number}"
+
+
 class ShareLink(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="share_links")
     version = models.ForeignKey(DocumentVersion, on_delete=models.CASCADE)

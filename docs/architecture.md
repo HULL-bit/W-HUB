@@ -44,8 +44,20 @@
 | `organization` | `Department`, `Team`, `TeamMembership`, rattachements hiérarchiques (organigramme) |
 | `permissions` | `Permission` (catalogue), `Role` + `RolePermission` (socle), `UserPermissionOverride` (exceptions), **moteur de permission effective** + classe DRF `HasPermission` |
 | `audit` | `AuditLogEntry` append-only, middleware de contexte de requête, couche d'écriture `record()`, signaux génériques, purge planifiée, API lecture seule + export |
-| `notifications` | `Notification`, `NotificationPreference`, service `notify()` / `notify_admins()` |
+| `notifications` | `Notification`, `NotificationPreference`, service `notify()` / `notify_admins()`, résumés e-mail (digests) |
 | `dashboard` | Agrégation de la vue d'accueil selon le rôle |
+| `validation` | Circuits de validation configurables réutilisables (`ValidationFlow`/`Step`, `ApprovalProcess` via GFK, moteur `engine.py`) — congés + demandes |
+| `hr` | Fiches employés, contrats, carrière, suivi médical/habilitations, congés (solde, décompte jours ouvrés), tableau de bord RH |
+| `correspondence` | Courrier entrant/sortant : numérotation auto, affectation, traçabilité, accusé de réception, modèles, export |
+| `tasks` | Tâches (kanban, sous-tâches, checklists, étiquettes), assignation, soumission + validation par assigné, récurrence, rappels, performance |
+| `documents` | Bibliothèque + diffusion ciblée avec suivi de lecture, versions, visibilité, liens de partage externes, corbeille, signature simple, extraction PDF |
+| `agenda` | `CalendarEvent` + feed unifié (tâches / réunions / congés virtuels), invitations, rappels, vue d'équipe, iCal |
+| `meetings` | Réunions Jitsi : lien + JWT, participants, ordre du jour, compte-rendu, sondages |
+| `integrations` | Client Rocket.Chat, `ChatAccount`/`ChatChannel`, SSO par jeton personnel, provisionnement — config-gated |
+| `demands` | Demandes transverses (`RequestType` à formulaire configurable, `Request`), s'appuie sur `validation` |
+| `engagement` | Fil d'annonces internes, sondages / votes org-wide |
+| `search` | Recherche globale transverse (aucun modèle propre) |
+| `reports` | Exports XLSX (openpyxl) et PDF (reportlab) par module |
 
 ## Sécurité (rappel)
 

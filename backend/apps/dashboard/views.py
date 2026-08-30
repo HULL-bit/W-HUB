@@ -125,6 +125,21 @@ class DashboardView(APIView):
             .values("id", "title", "start")[:3]
         )
 
+        from apps.engagement.models import Announcement, Poll
+
+        now = timezone.now()
+        anns = Announcement.objects.filter(publish_at__lte=now).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+        ).filter(Q(audience="all") | Q(audience="department", department_id=user.department_id))
+        data["widgets"]["announcements"] = list(
+            anns.values("id", "title", "body", "pinned", "publish_at")[:5]
+        )
+        data["widgets"]["open_polls"] = Poll.objects.filter(is_open=True).count()
+
+        data["widgets"]["my_requests_pending"] = user.requests_made.filter(
+            status="in_review"
+        ).count()
+
     @staticmethod
     def _shortcuts(perms: set[str]) -> list[dict]:
         catalog = [

@@ -45,7 +45,9 @@ docker compose -f infra/docker-compose.yml exec backend python manage.py creates
 
 ## Plan de livraison
 
-Voir [docs/roadmap.md](docs/roadmap.md). **Phase courante : Phase 1 — Socle technique.**
+Voir [docs/roadmap.md](docs/roadmap.md). **Les 6 phases sont livrées** (RH, courrier,
+tâches, documents, communication temps réel, demandes transverses & finalisation) —
+159 tests `pytest` + 77 vérifications de bout en bout, CI verte.
 
 ## Documentation
 

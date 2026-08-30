@@ -64,6 +64,10 @@ LOCAL_APPS = [
     "apps.agenda",
     "apps.meetings",
     "apps.integrations",
+    "apps.demands",
+    "apps.engagement",
+    "apps.search",
+    "apps.reports",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -277,6 +281,16 @@ CELERY_BEAT_SCHEDULE = {
     "agenda-event-reminders": {
         "task": "apps.agenda.tasks.send_event_reminders",
         "schedule": crontab(minute="*/2"),
+    },
+    "notification-digest-daily": {
+        "task": "apps.notifications.tasks.send_notification_digests",
+        "schedule": crontab(hour=18, minute=0),
+        "args": ("daily",),
+    },
+    "notification-digest-weekly": {
+        "task": "apps.notifications.tasks.send_notification_digests",
+        "schedule": crontab(hour=17, minute=0, day_of_week=5),
+        "args": ("weekly",),
     },
 }
 

@@ -324,6 +324,69 @@ check("statut des intégrations (RC/Jitsi non configurés)",
 code, sso = call("POST", "/chat/sso/", agent, {})
 check("SSO messagerie → 503 tant que Rocket.Chat non configuré", code == 503, code)
 
+print("\n== Phase 6 : Demandes, exports, compléments ==")
+code, rtypes = call("GET", "/request-types/", agent)
+achat_id = next(t["id"] for t in rtypes["results"] if t["code"] == "achat")
+check("3 types de demande semés", {t["code"] for t in rtypes["results"]} == {"achat", "mission", "remboursement"}, rtypes)
+
+code, dem = call("POST", "/requests/", agent, {
+    "type": achat_id, "title": "Achat de 2 PC portables",
+    "data": {"designation": "PC portable", "quantite": 2, "montant_estime": 900000, "justification": "Renouvellement du parc"},
+})
+dem_id = dem.get("id")
+check("création d'une demande (référence DEM-)", code == 201 and dem.get("reference", "").startswith("DEM-"), (code, dem))
+
+code, dsub = call("POST", f"/requests/{dem_id}/submit/", agent)
+check("soumission demande → in_review", dsub.get("status") == "in_review", dsub)
+
+# agent a pour manager 'chef' (défini en Phase 1) -> étape 1 = chef
+code, dd1 = call("POST", f"/requests/{dem_id}/decide/", chef, {"decision": "approved"})
+check("étape 1 (responsable) approuve", dd1.get("status") == "in_review", dd1)
+code, dd2 = call("POST", f"/requests/{dem_id}/decide/", adm, {"decision": "approved"})
+check("étape 2 (administration) approuve → approved", dd2.get("status") == "approved", dd2)
+
+code, badsubmit = call("POST", "/requests/", agent, {"type": achat_id, "title": "Incomplet", "data": {"designation": "x"}})
+code, bs = call("POST", f"/requests/{badsubmit['id']}/submit/", agent)
+check("soumission bloquée si champ obligatoire manquant", code == 400, code)
+
+# Annonces
+code, ann = call("POST", "/announcements/", adm, {"title": "Séminaire annuel", "body": "Le 15 octobre", "pinned": True})
+check("admin publie une annonce épinglée", code == 201, (code, ann))
+code, annfeed = call("GET", "/announcements/", agent)
+check("annonce visible dans le fil", any(a["id"] == ann["id"] for a in annfeed["results"]), annfeed)
+code, _anndenied = call("POST", "/announcements/", agent, {"title": "x", "body": "y"})
+check("employé ne peut pas publier d'annonce", code == 403, code)
+
+# Sondage interne
+code, poll = call("POST", "/polls/", chef, {"question": "Lieu du prochain atelier ?", "option_labels": ["Dakar", "Thiès"]})
+check("création d'un sondage interne", code == 201 and len(poll.get("options", [])) == 2, (code, poll))
+code, pv = call("POST", f"/polls/{poll['id']}/vote/", agent, {"option": poll["options"][0]["id"]})
+check("vote au sondage interne", sum(o["vote_count"] for o in pv.get("options", [])) == 1, pv)
+
+# Exports
+code, catalog = call("GET", "/reports/", adm)
+check("catalogue de rapports filtré par permission",
+      {"mail", "requests", "audit"} <= {d["key"] for d in catalog}, catalog)
+code, xlsx = call("GET", "/reports/requests.xlsx", adm)
+xb = xlsx if isinstance(xlsx, bytes) else str(xlsx).encode()
+check("export XLSX du registre des demandes", xb[:2] == b"PK", xb[:8])
+code, pdf = call("GET", "/reports/audit.pdf", root)
+pb = pdf if isinstance(pdf, bytes) else str(pdf).encode()
+check("export PDF du journal d'audit", pb[:4] == b"%PDF", pb[:8])
+code, xdenied = call("GET", "/reports/audit.xlsx", agent)
+check("export refusé sans permission", code == 403, code)
+
+# Recherche globale
+code, sr = call("GET", "/search/?q=PC%20portables", agent)
+check("recherche globale trouve la demande",
+      any(r["type"] == "request" for r in sr.get("results", [])), sr)
+
+# Export RGPD
+code, myexport = call("GET", "/auth/me/export/", agent)
+has_keys = isinstance(myexport, dict) and "account" in myexport and "requests" in myexport
+check("export RGPD des données personnelles", code == 200 and has_keys,
+      list(myexport)[:6] if isinstance(myexport, dict) else str(myexport)[:60])
+
 print("\n== Dashboard & audit ==")
 code, dash = call("GET", "/dashboard/", chef)
 check("dashboard chef : widgets présents",
