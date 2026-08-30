@@ -75,7 +75,7 @@ def start_lifecycle(*, employee: Employee, kind: str, actor, template: Lifecycle
         if responsible:
             notify(responsible, title=f"{process.get_kind_display()} — action à réaliser",
                    body=f"{tpl_item.label} ({employee.matricule})",
-                   url=f"/hr/{kind}/{process.id}", type="hr_lifecycle")
+                   url=f"/hr/lifecycle/{process.id}", type="hr_lifecycle")
 
     record(action=AuditAction.CREATE, module="hr", actor=actor, target=process,
            message=f"Démarrage {process.get_kind_display()} — {employee.matricule}")
