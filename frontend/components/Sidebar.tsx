@@ -116,9 +116,9 @@ export function Sidebar() {
     <>
       {/* barre mobile */}
       <div className="md:hidden flex items-center justify-between bg-wagadu-bark text-wagadu-ivory px-4 py-3">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <Image src="/brand/logo-mark.png" alt="" width={28} height={28} className="rounded" />
-          <span className="font-display">Wagadu&nbsp;Hub</span>
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Image src="/brand/logo-mark.png" alt="" width={38} height={38} className="rounded-lg" />
+          <span className="font-display text-lg">Wagadu&nbsp;Hub</span>
         </Link>
         <button onClick={() => setOpen((v) => !v)} aria-label="Menu" className="p-1">
           <Icon name={open ? "x" : "menu"} className="w-6 h-6" />
@@ -127,8 +127,8 @@ export function Sidebar() {
 
       <aside className={`${open ? "block" : "hidden"} md:block w-full md:w-72 md:shrink-0 md:min-h-dvh
         bg-wagadu-bark text-wagadu-ivory md:flex md:flex-col wagadu-branches`}>
-        <Link href="/dashboard" className="hidden md:flex p-5 items-center gap-2.5 border-b border-white/10">
-          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={38} height={38} className="rounded-lg" />
+        <Link href="/dashboard" className="hidden md:flex p-5 items-center gap-3 border-b border-white/10">
+          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={52} height={52} className="rounded-xl" />
           <span className="font-display text-2xl">Wagadu&nbsp;Hub</span>
         </Link>
 

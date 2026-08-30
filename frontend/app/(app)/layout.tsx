@@ -32,7 +32,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <GlobalSearch />
           <div className="ml-auto"><NotificationsBell /></div>
         </header>
-        <main className="flex-1 p-5 md:p-10 w-full max-w-[1400px] mx-auto">{children}</main>
+        <main className="flex-1 w-full relative wagadu-pattern">
+          <div className="relative p-5 md:p-10 w-full max-w-[1400px] mx-auto">{children}</div>
+        </main>
       </div>
     </div>
   );

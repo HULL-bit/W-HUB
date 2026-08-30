@@ -10,6 +10,11 @@ from apps.permissions.services import effective_permissions
 from .models import User, UserStatus
 from .services import record_login_attempt, validate_password_strength, verify_totp
 
+PROFILE_FIELDS = [
+    "job_title", "bio", "secondary_email", "linkedin_url", "twitter_url",
+    "facebook_url", "website_url", "whatsapp",
+]
+
 
 class RoleBriefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -27,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id", "email", "first_name", "last_name", "full_name", "phone",
             "role", "role_detail", "department", "manager", "is_super_admin",
             "status", "preferred_language", "timezone", "is_active",
-            "is_2fa_enabled", "created_at",
+            "is_2fa_enabled", "created_at", "avatar", *PROFILE_FIELDS,
         ]
         read_only_fields = ["id", "is_super_admin", "created_at", "is_2fa_enabled"]
 
@@ -40,12 +45,17 @@ class UserWriteSerializer(serializers.ModelSerializer):
         fields = [
             "id", "email", "first_name", "last_name", "phone", "role",
             "department", "manager", "status", "preferred_language", "timezone",
-            "is_active", "password",
+            "is_active", "password", "avatar", *PROFILE_FIELDS,
         ]
         read_only_fields = ["id"]
 
     def validate_password(self, value: str) -> str:
         validate_password_strength(value, self.instance)
+        return value
+
+    def validate_avatar(self, value):
+        if value and value.size > 2 * 1024 * 1024:
+            raise serializers.ValidationError("Image trop volumineuse (2 Mo maximum).")
         return value
 
     def create(self, validated_data):
@@ -65,12 +75,6 @@ class UserWriteSerializer(serializers.ModelSerializer):
         instance.full_clean(exclude=["password"])
         instance.save()
         return instance
-
-
-PROFILE_FIELDS = [
-    "job_title", "bio", "secondary_email", "linkedin_url", "twitter_url",
-    "facebook_url", "website_url", "whatsapp",
-]
 
 
 class SelfServiceSerializer(serializers.ModelSerializer):

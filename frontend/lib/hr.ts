@@ -8,6 +8,9 @@ export interface Employee {
   hire_date: string | null;
   employment_type: string;
   hr_status: string;
+  probation_end: string | null;
+  birth_date: string | null;
+  national_id: string;
   seniority_years: number | null;
 }
 
