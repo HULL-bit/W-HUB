@@ -57,6 +57,10 @@ jobs:
 
   deploy:
     needs: build-push
+    # Activé en posant la variable de dépôt DEPLOY_ENABLED=true (une fois le
+    # serveur provisionné et les secrets SERVER_* / DEPLOY_PATH renseignés).
+    # Tant qu'elle est absente, ce job est ignoré (et non « en échec »).
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:

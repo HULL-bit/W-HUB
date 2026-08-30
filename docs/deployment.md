@@ -55,12 +55,20 @@ démarrage du conteneur.
 `frontend`, `celery-worker`, `celery-beat` : le serveur tire les images depuis
 GHCR, un poste de dev peut toujours reconstruire localement (`up --build`).
 
-### Secrets requis (Settings → Secrets and variables → Actions)
+### Activation du déploiement
 
-| Secret | Usage |
-|---|---|
-| `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` | connexion SSH au serveur |
-| `DEPLOY_PATH` | chemin du dépôt cloné sur le serveur (ex. `/opt/wagadu-hub`) |
+Le job `build-push` (build + push des images vers GHCR) tourne à chaque push sur
+`main`/`develop`. Le job `deploy` (SSH) reste **ignoré** tant que la variable de
+dépôt `DEPLOY_ENABLED` n'est pas à `true` — pas de faux échec avant qu'un serveur
+existe.
+
+Pour l'activer (Settings → Secrets and variables → Actions) :
+
+| Type | Nom | Usage |
+|---|---|---|
+| Variable | `DEPLOY_ENABLED` = `true` | active le job `deploy` |
+| Secret | `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` | connexion SSH au serveur |
+| Secret | `DEPLOY_PATH` | chemin du dépôt cloné sur le serveur (ex. `/opt/wagadu-hub`) |
 
 `GITHUB_TOKEN` est fourni automatiquement (le workflow déclare
 `permissions: packages: write` pour pousser sur GHCR). Les valeurs `.env` de
