@@ -49,13 +49,7 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="font-display text-2xl text-wagadu-brown">Espace documentaire</h1>
-        <div className="flex gap-2">
-          <Link href="/documents/sent" className="btn-ghost">Mes envois</Link>
-          <Link href="/documents/trash" className="btn-ghost">Corbeille</Link>
-        </div>
-      </div>
+      <h1 className="font-display text-2xl text-wagadu-brown">Espace documentaire</h1>
 
       <div className="card flex flex-wrap gap-2 items-center">
         <input className="input flex-1 min-w-[12rem]" placeholder="Rechercher (titre, contenu, mots-clés)"

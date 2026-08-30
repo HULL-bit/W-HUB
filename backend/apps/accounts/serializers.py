@@ -67,6 +67,12 @@ class UserWriteSerializer(serializers.ModelSerializer):
         return instance
 
 
+PROFILE_FIELDS = [
+    "job_title", "bio", "secondary_email", "linkedin_url", "twitter_url",
+    "facebook_url", "website_url", "whatsapp",
+]
+
+
 class SelfServiceSerializer(serializers.ModelSerializer):
     """Champs qu'un employé peut mettre à jour lui-même (section 2.1)."""
 
@@ -74,13 +80,19 @@ class SelfServiceSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "first_name", "last_name", "phone", "preferred_language", "timezone",
-            "emergency_contact", "bank_account",
+            "emergency_contact", "bank_account", "avatar", *PROFILE_FIELDS,
         ]
+
+    def validate_avatar(self, value):
+        if value and value.size > 2 * 1024 * 1024:
+            raise serializers.ValidationError("Image trop volumineuse (2 Mo maximum).")
+        return value
 
 
 class MeSerializer(serializers.ModelSerializer):
     role_detail = RoleBriefSerializer(source="role", read_only=True)
     permissions = serializers.SerializerMethodField()
+    avatar = serializers.ImageField(read_only=True)
 
     class Meta:
         model = User
@@ -88,7 +100,7 @@ class MeSerializer(serializers.ModelSerializer):
             "id", "email", "first_name", "last_name", "phone", "role", "role_detail",
             "department", "manager", "is_super_admin", "status", "preferred_language",
             "timezone", "emergency_contact", "bank_account", "is_2fa_enabled",
-            "permissions",
+            "avatar", *PROFILE_FIELDS, "permissions",
         ]
         read_only_fields = fields
 
@@ -96,6 +108,22 @@ class MeSerializer(serializers.ModelSerializer):
         return [
             code for code, meta in effective_permissions(obj).items() if meta["granted"]
         ]
+
+
+class MemberSerializer(serializers.ModelSerializer):
+    """Fiche annuaire — visible par tout membre authentifié."""
+
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
+    role_name = serializers.CharField(source="role.name", read_only=True)
+    department_name = serializers.CharField(source="department.name", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "full_name", "email", "phone", "avatar", "role_name",
+            "department_name", *PROFILE_FIELDS,
+        ]
+        read_only_fields = fields
 
 
 class LoginSerializer(TokenObtainPairSerializer):

@@ -21,6 +21,7 @@ from .models import User
 from .serializers import (
     ChangePasswordSerializer,
     LoginSerializer,
+    MemberSerializer,
     MeSerializer,
     SelfServiceSerializer,
     UserSerializer,
@@ -74,10 +75,27 @@ class MeView(APIView):
         serializer = SelfServiceSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        changed = {
+            k: {"after": v} for k, v in serializer.validated_data.items()
+            if isinstance(v, (str, int, float, bool, type(None)))
+        }
         record(action=AuditAction.UPDATE, module="accounts", actor=request.user,
-               target=request.user, changes={k: {"after": v} for k, v in serializer.validated_data.items()},
+               target=request.user, changes=changed,
                message="Mise à jour du profil (libre-service)", request=request)
         return Response(MeSerializer(request.user).data)
+
+
+class MemberDirectoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """Annuaire interne — accessible à tout membre authentifié."""
+
+    serializer_class = MemberSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ["department", "role"]
+    search_fields = ["first_name", "last_name", "email", "job_title"]
+    ordering = ["first_name", "last_name"]
+
+    def get_queryset(self):
+        return User.objects.filter(is_active=True).select_related("role", "department")
 
 
 class PersonalDataExportView(APIView):
