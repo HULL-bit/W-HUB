@@ -86,6 +86,7 @@ class DashboardView(APIView):
 
     @staticmethod
     def _personal_widgets(data, user):
+        from django.db.models import Q
         from django.utils import timezone
 
         from apps.correspondence.models import Mail, MailStatus
@@ -109,10 +110,20 @@ class DashboardView(APIView):
         ).count()
 
         from apps.documents.models import DocumentRecipient
+        from apps.meetings.models import Meeting, MeetingStatus
 
         data["widgets"]["my_documents_unread"] = DocumentRecipient.objects.filter(
             user=user, is_read=False, document__deleted_at__isnull=True
         ).count()
+
+        data["widgets"]["next_meetings"] = list(
+            Meeting.objects.filter(
+                Q(organizer=user) | Q(participants=user),
+                status=MeetingStatus.SCHEDULED,
+                start__gte=timezone.now(),
+            ).distinct().order_by("start")
+            .values("id", "title", "start")[:3]
+        )
 
     @staticmethod
     def _shortcuts(perms: set[str]) -> list[dict]:
@@ -120,7 +131,7 @@ class DashboardView(APIView):
             ("tasks.submit", "Soumettre une tâche", "/tasks"),
             ("tasks.assign", "Assigner une tâche", "/tasks/new"),
             ("documents.send", "Envoyer un document", "/documents/send"),
-            ("meetings.create", "Démarrer une visio", "/meetings/new"),
+            ("meetings.create", "Planifier une réunion", "/meetings/new"),
             ("mail.register", "Enregistrer un courrier", "/mail/new"),
             ("hr.view", "Tableau de bord RH", "/hr"),
             ("hr.leave.validate", "Valider des congés", "/leave/validate"),

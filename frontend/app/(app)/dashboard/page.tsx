@@ -19,6 +19,7 @@ interface Dashboard {
     my_tasks_overdue?: number;
     my_tasks_to_review?: number;
     my_documents_unread?: number;
+    next_meetings?: { id: number; title: string; start: string }[];
   };
 }
 
@@ -112,6 +113,22 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
+
+          {!!data.widgets.next_meetings?.length && (
+            <section className="card">
+              <p className="label">Prochaines réunions</p>
+              <ul className="divide-y divide-wagadu-sand text-sm">
+                {data.widgets.next_meetings.map((mt) => (
+                  <li key={mt.id} className="py-2 flex justify-between">
+                    <Link href={`/meetings/${mt.id}`} className="text-wagadu-terracotta">{mt.title}</Link>
+                    <span className="font-mono text-xs opacity-60">
+                      {new Date(mt.start).toLocaleString("fr-FR")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {data.shortcuts.length > 0 && (
             <section className="card">

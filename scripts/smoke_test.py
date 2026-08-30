@@ -259,6 +259,71 @@ call("POST", f"/documents/{doc_id}/restore/", chef)
 code, live = call("GET", "/documents/", chef)
 check("restauration depuis la corbeille", any(d["id"] == doc_id for d in live.get("results", [])), live)
 
+print("\n== Phase 5 : Agenda, Réunions, Messagerie ==")
+import datetime as _dt
+
+_start = _dt.datetime.now(_dt.timezone.utc)
+_end = _start + _dt.timedelta(days=30)
+
+code, ev = call("POST", "/agenda/events/", agent, {
+    "title": "RDV projet",
+    "start": (_start + _dt.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S"),
+    "end": (_start + _dt.timedelta(days=1, hours=1)).strftime("%Y-%m-%dT%H:%M:%S"),
+    "attendee_ids": [users["chef"]],
+    "reminders": [{"minutes_before": 30, "channel": "notification"}],
+})
+check("création d'un évènement d'agenda avec invité", code == 201, (code, ev))
+
+code, resp = call("POST", f"/agenda/events/{ev['id']}/respond/", chef, {"response": "accepted"})
+check("confirmation de présence à un évènement", resp.get("my_response") == "accepted", resp)
+
+code, mtg = call("POST", "/meetings/", chef, {
+    "title": "Comité hebdo",
+    "start": (_start + _dt.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S"),
+    "end": (_start + _dt.timedelta(days=1, hours=1)).strftime("%Y-%m-%dT%H:%M:%S"),
+    "agenda": "1. Budget\n2. Terrain",
+    "participant_ids": [users["employe"]],
+})
+mtg_id = mtg.get("id")
+check("planification d'une réunion (lien Jitsi auto)",
+      code == 201 and mtg.get("join_url", "").endswith(mtg.get("room_slug", "x")), (code, mtg))
+
+code, joininfo = call("GET", f"/meetings/{mtg_id}/join/", agent)
+check("participant peut rejoindre (Jitsi non configuré → lien simple)",
+      code == 200 and joininfo.get("jwt") is None and joininfo.get("configured") is False, joininfo)
+
+code, joindenied = call("GET", f"/meetings/{mtg_id}/join/", rh)
+check("réunion sur invitation → tiers refusé", code in (403, 404), code)
+
+code, poll = call("POST", "/meeting-polls/", chef, {
+    "meeting": mtg_id, "question": "Créneau ?", "option_labels": ["09h", "14h"],
+})
+check("sondage de réunion créé", code == 201 and len(poll.get("options", [])) == 2, (code, poll))
+opt_id = poll["options"][1]["id"]
+code, voted = call("POST", f"/meeting-polls/{poll['id']}/vote/", agent, {"option": opt_id})
+check("vote au sondage (choix unique)",
+      sum(o["vote_count"] for o in voted.get("options", [])) == 1, voted)
+
+code, closed = call("POST", f"/meetings/{mtg_id}/close/", chef, {"minutes": "Décisions : créneau 14h."})
+check("clôture de réunion + compte-rendu", closed.get("status") == "ended", closed)
+
+code, feed = call("GET",
+    f"/agenda/?start={_start.strftime('%Y-%m-%dT%H:%M:%S')}&end={_end.strftime('%Y-%m-%dT%H:%M:%S')}", agent)
+ftypes = {i["type"] for i in feed} if isinstance(feed, list) else set()
+check("feed agenda fusionne évènements + tâches + réunions",
+      {"meeting"} <= ftypes and isinstance(feed, list), ftypes)
+
+code, ics = call("GET", "/agenda/export.ics", agent)
+ics_text = ics.decode() if isinstance(ics, bytes) else str(ics)
+check("export iCal", "BEGIN:VCALENDAR" in ics_text, ics_text[:40])
+
+code, st = call("GET", "/integrations/status/", agent)
+check("statut des intégrations (RC/Jitsi non configurés)",
+      st.get("rocketchat", {}).get("configured") is False, st)
+
+code, sso = call("POST", "/chat/sso/", agent, {})
+check("SSO messagerie → 503 tant que Rocket.Chat non configuré", code == 503, code)
+
 print("\n== Dashboard & audit ==")
 code, dash = call("GET", "/dashboard/", chef)
 check("dashboard chef : widgets présents",

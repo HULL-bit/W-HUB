@@ -17,6 +17,9 @@ api_v1 = [
     path("", include("apps.correspondence.urls")),
     path("", include("apps.tasks.urls")),
     path("", include("apps.documents.urls")),
+    path("", include("apps.agenda.urls")),
+    path("", include("apps.meetings.urls")),
+    path("", include("apps.integrations.urls")),
 ]
 
 urlpatterns = [

@@ -61,6 +61,9 @@ LOCAL_APPS = [
     "apps.correspondence",
     "apps.tasks",
     "apps.documents",
+    "apps.agenda",
+    "apps.meetings",
+    "apps.integrations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -212,6 +215,19 @@ CORS_ALLOWED_ORIGINS = env_list(
 )
 CORS_ALLOW_CREDENTIALS = True
 
+# --- Cache ---------------------------------------------------------
+if env("REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": env("REDIS_URL"),
+        }
+    }
+else:
+    CACHES = {
+        "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+    }
+
 # --- Celery ---------------------------------------------------------
 CELERY_BROKER_URL = env("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("REDIS_URL", "redis://localhost:6379/0")
@@ -250,6 +266,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.documents.tasks.purge_trashed_documents",
         "schedule": crontab(hour=3, minute=30),
     },
+    "meeting-reminders": {
+        "task": "apps.meetings.tasks.send_meeting_reminders",
+        "schedule": crontab(minute="*/5"),
+    },
+    "close-stale-meetings": {
+        "task": "apps.meetings.tasks.close_stale_meetings",
+        "schedule": crontab(minute=0),
+    },
+    "agenda-event-reminders": {
+        "task": "apps.agenda.tasks.send_event_reminders",
+        "schedule": crontab(minute="*/2"),
+    },
 }
 
 # --- E-mail ---------------------------------------------------------
@@ -278,6 +306,18 @@ WAGADU = {
     "LOGIN_MAX_FAILED_ATTEMPTS": 5,
     "LOGIN_LOCKOUT_MINUTES": 15,
     "DOC_TRASH_RETENTION_DAYS": 30,
+    # --- Intégrations temps réel (Phase 5) — vides = désactivées ---
+    "ROCKETCHAT": {
+        "URL": env("ROCKETCHAT_URL", ""),
+        "ADMIN_USER": env("ROCKETCHAT_ADMIN_USER", ""),
+        "ADMIN_PASSWORD": env("ROCKETCHAT_ADMIN_PASSWORD", ""),
+    },
+    "JITSI": {
+        "URL": env("JITSI_URL", ""),
+        "DOMAIN": env("JITSI_DOMAIN", ""),
+        "APP_ID": env("JITSI_APP_ID", ""),
+        "APP_SECRET": env("JITSI_APP_SECRET", ""),
+    },
 }
 
 # --- Sécurité (renforcée en prod) -----------------------------------
