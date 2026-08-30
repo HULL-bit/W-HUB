@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useApi } from "@/lib/useApi";
-import { Task } from "@/lib/tasks";
+import { STATUS_FALLBACK, STATUS_STYLE, Task } from "@/lib/tasks";
 
 export default function TaskCalendarPage() {
   const [month, setMonth] = useState(() => {
@@ -55,12 +55,15 @@ export default function TaskCalendarPage() {
             <div key={i} className="min-h-[5rem] rounded-lg border border-wagadu-sand p-1">
               {day && <span className="text-xs font-mono opacity-60">{day}</span>}
               <div className="space-y-0.5">
-                {day && byDay[day]?.map((t) => (
-                  <Link key={t.id} href={`/tasks/${t.id}`}
-                    className={`block text-[11px] rounded px-1 truncate ${t.is_overdue ? "bg-wagadu-terracotta/20 text-wagadu-terracotta" : "bg-wagadu-gold/30"}`}>
-                    {t.title}
-                  </Link>
-                ))}
+                {day && byDay[day]?.map((t) => {
+                  const st = STATUS_STYLE[t.status] ?? STATUS_FALLBACK;
+                  return (
+                    <Link key={t.id} href={`/tasks/${t.id}`}
+                      className={`block text-[11px] rounded px-1 truncate ${st.badge}`}>
+                      {t.title}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}

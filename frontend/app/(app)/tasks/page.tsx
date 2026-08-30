@@ -5,7 +5,7 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
-import { PRIORITY_STYLE, Task } from "@/lib/tasks";
+import { PRIORITY_STYLE, STATUS_FALLBACK, STATUS_STYLE, Task } from "@/lib/tasks";
 
 export default function MyTasksPage() {
   const { me, can } = useAuth();
@@ -41,13 +41,14 @@ export default function MyTasksPage() {
       <div className="space-y-3">
         {data?.map((t) => {
           const mine = myAssignment(t);
+          const st = STATUS_STYLE[t.status] ?? STATUS_FALLBACK;
           return (
-            <div key={t.id} className={`card ${t.is_overdue ? "border-wagadu-terracotta" : ""}`}>
+            <div key={t.id} className={`card border-l-4 ${st.bar} ${t.is_overdue ? "ring-1 ring-red-300" : ""}`}>
               <div className="flex justify-between flex-wrap gap-2">
-                <Link href={`/tasks/${t.id}`} className="font-medium text-wagadu-brown">{t.title}</Link>
+                <Link href={`/tasks/${t.id}`} className="font-semibold text-wagadu-brown">{t.title}</Link>
                 <div className="flex gap-1">
                   <span className={`badge ${PRIORITY_STYLE[t.priority]}`}>{t.priority_display}</span>
-                  <span className="badge bg-wagadu-sand">{mine?.progress_status ?? t.status_display}</span>
+                  <span className={`badge ${st.badge}`}>{t.status_display}</span>
                 </div>
               </div>
               {t.due_at && (
