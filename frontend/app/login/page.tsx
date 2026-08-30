@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
@@ -37,8 +39,12 @@ export default function LoginPage() {
   return (
     <main className="min-h-dvh grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between bg-wagadu-bark text-wagadu-ivory p-10 wagadu-branches">
-        <div className="font-display text-3xl">Wagadu&nbsp;Hub</div>
+        <Link href="/" className="flex items-center gap-3">
+          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={44} height={44} className="rounded-lg" />
+          <span className="font-display text-2xl">Wagadu&nbsp;Hub</span>
+        </Link>
         <div>
+          <Image src="/brand/logo-negatif.png" alt="Wagadu Africa" width={180} height={137} className="mb-6" />
           <p className="font-display text-4xl leading-tight">
             La plateforme interne de Wagadu&nbsp;Africa
           </p>
@@ -50,7 +56,11 @@ export default function LoginPage() {
         <p className="text-xs text-wagadu-sand/60">Projet Blue-Track</p>
       </div>
 
-      <div className="flex items-center justify-center p-6 wagadu-branches">
+      <div className="flex flex-col items-center justify-center p-6 wagadu-branches">
+        <Link href="/" className="md:hidden flex items-center gap-2 mb-6">
+          <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={40} height={40} className="rounded-lg" />
+          <span className="font-display text-xl text-wagadu-brown">Wagadu&nbsp;Hub</span>
+        </Link>
         <form onSubmit={onSubmit} className="card w-full max-w-sm space-y-4">
           <h1 className="font-display text-2xl text-wagadu-brown">Connexion</h1>
 

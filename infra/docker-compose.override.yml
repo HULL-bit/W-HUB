@@ -32,8 +32,10 @@ services:
       context: ../frontend
     environment:
       NODE_ENV: development
-      # Servi via Nginx (http://localhost) : l'API est sur la même origine.
+      # Chemin relatif : fonctionne via Nginx (http://localhost) ET via le
+      # rewrite Next (http://localhost:3000, proxifié vers INTERNAL_API_URL).
       NEXT_PUBLIC_API_BASE_URL: /api/v1
+      INTERNAL_API_URL: http://backend:8000
       WATCHPACK_POLLING: "true"
     volumes:
       - ../frontend:/app

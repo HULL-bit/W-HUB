@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 
@@ -38,9 +39,10 @@ export function Sidebar() {
 
   return (
     <aside className="w-full md:w-64 md:min-h-dvh bg-wagadu-bark text-wagadu-ivory flex md:flex-col wagadu-branches">
-      <div className="p-4 md:p-6 flex items-center gap-2 border-b border-white/10">
+      <Link href="/dashboard" className="p-4 md:p-6 flex items-center gap-2 border-b border-white/10">
+        <Image src="/brand/logo-mark.png" alt="Wagadu Africa" width={32} height={32} className="rounded-md" />
         <span className="font-display text-xl">Wagadu&nbsp;Hub</span>
-      </div>
+      </Link>
       <nav className="flex-1 p-2 md:p-4 flex md:flex-col gap-1 overflow-x-auto">
         {NAV.filter((n) => !n.perm || can(n.perm)).map((n) => {
           const active = pathname === n.href || pathname.startsWith(n.href + "/");
