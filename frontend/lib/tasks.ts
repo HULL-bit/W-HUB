@@ -82,3 +82,13 @@ export const PRIORITY_STYLE: Record<string, string> = {
   high: "bg-wagadu-amber/30 text-wagadu-brown",
   urgent: "bg-wagadu-terracotta/25 text-wagadu-terracotta",
 };
+
+/** Code couleur par statut : terminé=vert, à faire=bleu, en cours=jaune, en révision=rouge. */
+export const STATUS_STYLE: Record<string, { badge: string; bar: string; dot: string }> = {
+  todo: { badge: "bg-sky-100 text-sky-800", bar: "border-l-sky-400", dot: "bg-sky-500" },
+  in_progress: { badge: "bg-amber-100 text-amber-900", bar: "border-l-amber-400", dot: "bg-amber-500" },
+  in_review: { badge: "bg-red-100 text-red-800", bar: "border-l-red-400", dot: "bg-red-500" },
+  done: { badge: "bg-emerald-100 text-emerald-800", bar: "border-l-emerald-500", dot: "bg-emerald-500" },
+};
+
+export const STATUS_FALLBACK = { badge: "bg-wagadu-sand", bar: "border-l-wagadu-sand", dot: "bg-wagadu-sand" };
