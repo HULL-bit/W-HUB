@@ -23,6 +23,8 @@ interface Dashboard {
     announcements?: { id: number; title: string; body: string; pinned: boolean; publish_at: string }[];
     open_polls?: number;
     my_requests_pending?: number;
+    my_onboarding?: { id: number; done: number; total: number; percent: number };
+    my_evaluation_todo?: number;
   };
 }
 
@@ -138,6 +140,27 @@ export default function DashboardPage() {
               <p className="label">Mes demandes en cours de validation</p>
               <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_requests_pending}</p>
               <Link href="/requests" className="text-sm text-wagadu-terracotta">Voir</Link>
+            </section>
+          )}
+
+          {data.widgets.my_onboarding && (
+            <section className="card">
+              <p className="label">Mon intégration</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-3 rounded-full bg-wagadu-sand overflow-hidden">
+                  <div className="h-full bg-wagadu-gold" style={{ width: `${data.widgets.my_onboarding.percent}%` }} />
+                </div>
+                <span className="font-mono text-sm">{data.widgets.my_onboarding.done}/{data.widgets.my_onboarding.total}</span>
+              </div>
+              <Link href={`/hr/lifecycle/${data.widgets.my_onboarding.id}`} className="text-sm text-wagadu-terracotta">Voir la checklist</Link>
+            </section>
+          )}
+
+          {!!data.widgets.my_evaluation_todo && (
+            <section className="card">
+              <p className="label">Évaluation à compléter</p>
+              <p className="font-display text-3xl text-wagadu-brown">{data.widgets.my_evaluation_todo}</p>
+              <Link href="/hr/evaluations" className="text-sm text-wagadu-terracotta">Compléter</Link>
             </section>
           )}
 

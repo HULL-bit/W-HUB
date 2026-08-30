@@ -63,3 +63,48 @@ class HealthRecordAdmin(admin.ModelAdmin):
 admin.site.register(EmployeeDocument)
 admin.site.register(CareerEvent)
 admin.site.register(Contract)
+
+
+from .models import (  # noqa: E402
+    EvaluationCampaign,
+    EvaluationForm,
+    LifecycleProcess,
+    LifecycleTemplate,
+)
+
+
+class LifecycleTemplateItemInline(admin.TabularInline):
+    from .models import LifecycleTemplateItem
+    model = LifecycleTemplateItem
+    extra = 1
+
+
+@admin.register(LifecycleTemplate)
+class LifecycleTemplateAdmin(admin.ModelAdmin):
+    list_display = ("name", "kind", "is_default")
+    list_filter = ("kind", "is_default")
+    inlines = [LifecycleTemplateItemInline]
+
+
+@admin.register(LifecycleProcess)
+class LifecycleProcessAdmin(admin.ModelAdmin):
+    list_display = ("kind", "employee", "status", "reference_date", "created_at")
+    list_filter = ("kind", "status")
+
+
+class EvaluationQuestionInline(admin.TabularInline):
+    from .models import EvaluationQuestion
+    model = EvaluationQuestion
+    extra = 1
+
+
+@admin.register(EvaluationForm)
+class EvaluationFormAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active")
+    inlines = [EvaluationQuestionInline]
+
+
+@admin.register(EvaluationCampaign)
+class EvaluationCampaignAdmin(admin.ModelAdmin):
+    list_display = ("name", "form", "status", "period_start", "period_end")
+    list_filter = ("status",)

@@ -322,3 +322,251 @@ class LeaveRequest(models.Model):
         if days and half_end and start != end:
             days -= 0.5
         return days
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Phase 7 — Lot A : onboarding / offboarding / évaluations
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class ResponsibleRole(models.TextChoices):
+    HR = "hr", _("RH")
+    MANAGER = "manager", _("Responsable hiérarchique")
+    EMPLOYEE = "employee", _("Employé")
+    IT = "it", _("Informatique")
+
+
+class ChecklistCategory(models.TextChoices):
+    TASK = "task", _("Tâche")
+    DOCUMENT = "document", _("Document à fournir")
+    EQUIPMENT = "equipment", _("Matériel")
+    ACCESS = "access", _("Accès / comptes")
+    HANDOVER = "handover", _("Passation")
+    ADMIN = "admin", _("Administratif")
+
+
+class LifecycleKind(models.TextChoices):
+    ONBOARDING = "onboarding", _("Intégration")
+    OFFBOARDING = "offboarding", _("Départ")
+
+
+class LifecycleTemplate(models.Model):
+    kind = models.CharField(max_length=16, choices=LifecycleKind.choices)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["kind", "name"]
+        verbose_name = _("modèle de checklist RH")
+
+    def __str__(self) -> str:
+        return f"[{self.get_kind_display()}] {self.name}"
+
+
+class LifecycleTemplateItem(models.Model):
+    template = models.ForeignKey(
+        LifecycleTemplate, on_delete=models.CASCADE, related_name="items"
+    )
+    label = models.CharField(max_length=200)
+    category = models.CharField(
+        max_length=16, choices=ChecklistCategory.choices, default=ChecklistCategory.TASK
+    )
+    responsible_role = models.CharField(
+        max_length=16, choices=ResponsibleRole.choices, default=ResponsibleRole.HR
+    )
+    order = models.PositiveIntegerField(default=0)
+    due_offset_days = models.IntegerField(
+        default=0, help_text=_("Échéance = date d'entrée/départ + N jours (peut être négatif).")
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
+class LifecycleProcess(models.Model):
+    class Status(models.TextChoices):
+        IN_PROGRESS = "in_progress", _("En cours")
+        COMPLETED = "completed", _("Terminé")
+        CANCELLED = "cancelled", _("Annulé")
+
+    kind = models.CharField(max_length=16, choices=LifecycleKind.choices)
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="lifecycle_processes"
+    )
+    template = models.ForeignKey(LifecycleTemplate, on_delete=models.SET_NULL, null=True)
+    reference_date = models.DateField(
+        help_text=_("Date d'entrée (onboarding) ou dernier jour (offboarding).")
+    )
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.IN_PROGRESS)
+    started_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["kind", "employee"],
+                condition=models.Q(status="in_progress"),
+                name="uniq_active_lifecycle_per_employee",
+            )
+        ]
+        verbose_name = _("processus d'intégration / départ")
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} — {self.employee.matricule}"
+
+    @property
+    def progress(self) -> dict:
+        total = self.items.count()
+        done = self.items.filter(is_done=True).count()
+        return {"done": done, "total": total, "percent": round(done / total * 100) if total else 0}
+
+    def refresh_status(self) -> None:
+        if self.status == self.Status.IN_PROGRESS and self.items.exists() and not self.items.filter(is_done=False).exists():
+            self.status = self.Status.COMPLETED
+            self.completed_at = timezone.now()
+            self.save(update_fields=["status", "completed_at"])
+
+
+class LifecycleItem(models.Model):
+    process = models.ForeignKey(LifecycleProcess, on_delete=models.CASCADE, related_name="items")
+    label = models.CharField(max_length=200)
+    category = models.CharField(max_length=16, choices=ChecklistCategory.choices)
+    responsible_role = models.CharField(max_length=16, choices=ResponsibleRole.choices)
+    responsible = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    due_date = models.DateField(null=True, blank=True)
+    is_done = models.BooleanField(default=False)
+    done_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    done_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    document = models.ForeignKey(
+        "documents.Document", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return f"{'✓' if self.is_done else '○'} {self.label}"
+
+
+# ─── Évaluations de performance ───────────────────────────────────────
+
+class QuestionType(models.TextChoices):
+    RATING = "rating_1_5", _("Note de 1 à 5")
+    TEXT = "text", _("Texte libre")
+    YES_NO = "yes_no", _("Oui / Non")
+
+
+class EvaluationForm(models.Model):
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = _("formulaire d'évaluation")
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class EvaluationQuestion(models.Model):
+    form = models.ForeignKey(EvaluationForm, on_delete=models.CASCADE, related_name="questions")
+    section = models.CharField(max_length=120, default="Général")
+    label = models.CharField(max_length=255)
+    type = models.CharField(max_length=16, choices=QuestionType.choices, default=QuestionType.RATING)
+    weight = models.DecimalField(max_digits=4, decimal_places=1, default=1)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
+class EvaluationCampaign(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Brouillon")
+        OPEN = "open", _("Ouverte")
+        CLOSED = "closed", _("Clôturée")
+
+    name = models.CharField(max_length=150)
+    form = models.ForeignKey(EvaluationForm, on_delete=models.PROTECT)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    department = models.ForeignKey(
+        "organization.Department", on_delete=models.SET_NULL, null=True, blank=True,
+        help_text=_("Vide = tout le personnel."),
+    )
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-period_start"]
+        verbose_name = _("campagne d'évaluation")
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Evaluation(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", _("À démarrer")
+        SELF_ASSESSED = "self_assessed", _("Auto-évaluation faite")
+        MANAGER_ASSESSED = "manager_assessed", _("Évaluée par le responsable")
+        ACKNOWLEDGED = "acknowledged", _("Prise de connaissance")
+        FINALIZED = "finalized", _("Finalisée")
+
+    campaign = models.ForeignKey(EvaluationCampaign, on_delete=models.CASCADE, related_name="evaluations")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="evaluations")
+    evaluator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="evaluations_to_do"
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    self_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    manager_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    overall_comment = models.TextField(blank=True)
+    employee_comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    finalized_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["campaign", "employee"], name="uniq_campaign_evaluation")
+        ]
+        verbose_name = _("évaluation de performance")
+
+    def __str__(self) -> str:
+        return f"{self.campaign.name} — {self.employee.matricule}"
+
+
+class EvaluationAnswer(models.Model):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(EvaluationQuestion, on_delete=models.CASCADE)
+    self_value = models.CharField(max_length=2000, blank=True)
+    manager_value = models.CharField(max_length=2000, blank=True)
+    comment = models.TextField(blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["evaluation", "question"], name="uniq_evaluation_answer")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.evaluation_id} / {self.question_id}"

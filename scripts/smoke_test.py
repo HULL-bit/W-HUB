@@ -387,6 +387,52 @@ has_keys = isinstance(myexport, dict) and "account" in myexport and "requests" i
 check("export RGPD des données personnelles", code == 200 and has_keys,
       list(myexport)[:6] if isinstance(myexport, dict) else str(myexport)[:60])
 
+print("\n== Phase 7 Lot A : onboarding / offboarding / évaluations ==")
+# une fiche employé a été créée en Phase 2 (emp_id) -> onboarding auto-généré
+code, procs = call("GET", f"/hr/lifecycle-processes/?employee={emp_id}&kind=onboarding", rh)
+onb = procs["results"][0] if procs.get("results") else {}
+check("onboarding auto-généré à la création de la fiche employé",
+      onb.get("kind") == "onboarding" and onb.get("progress", {}).get("total", 0) >= 10, procs)
+
+# l'agent coche un item dont il est responsable
+own = next((i for i in onb.get("items", []) if i["responsible_role"] == "employee"), None)
+code, toggled = call("POST", f"/hr/lifecycle-items/{own['id']}/toggle/", agent, {"done": True})
+check("l'employé coche un item de sa checklist d'intégration",
+      toggled.get("progress", {}).get("done", 0) >= 1, toggled)
+
+# campagne d'évaluation
+code, forms = call("GET", "/hr/evaluation-forms/", rh)
+form_id = forms["results"][0]["id"]
+code, camp = call("POST", "/hr/evaluation-campaigns/", rh, {
+    "name": "Évaluation test", "form": form_id,
+    "period_start": "2026-01-01", "period_end": "2026-12-31",
+})
+camp_id = camp.get("id")
+check("RH crée une campagne d'évaluation", code == 201, (code, camp))
+
+code, opened = call("POST", f"/hr/evaluation-campaigns/{camp_id}/open/", rh)
+check("ouverture de campagne → statut open", opened.get("status") == "open", opened)
+
+code, mine_ev = call("GET", "/hr/evaluations/mine/", agent)
+ev_id = mine_ev[0]["id"] if mine_ev else None
+check("une évaluation est générée pour l'employé", bool(ev_id), mine_ev)
+
+rating_qs = [q["id"] for q in mine_ev[0]["questions"] if q["type"] == "rating_1_5"]
+code, sa = call("POST", f"/hr/evaluations/{ev_id}/self-assess/", agent,
+                {"answers": {str(q): "4" for q in rating_qs}})
+check("auto-évaluation → score calculé", sa.get("status") == "self_assessed" and float(sa.get("self_score") or 0) == 4.0, sa)
+
+code, ma = call("POST", f"/hr/evaluations/{ev_id}/manager-assess/", chef,
+                {"answers": {str(q): "3" for q in rating_qs}})
+check("évaluation du responsable (manager = chef de l'agent)",
+      ma.get("status") == "manager_assessed" and float(ma.get("manager_score") or 0) == 3.0, ma)
+
+code, ack = call("POST", f"/hr/evaluations/{ev_id}/acknowledge/", agent, {})
+check("prise de connaissance par l'employé", ack.get("status") == "acknowledged", ack)
+
+code, fin = call("POST", f"/hr/evaluations/{ev_id}/finalize/", rh)
+check("finalisation RH → évènement de carrière créé", fin.get("status") == "finalized", fin)
+
 print("\n== Dashboard & audit ==")
 code, dash = call("GET", "/dashboard/", chef)
 check("dashboard chef : widgets présents",
