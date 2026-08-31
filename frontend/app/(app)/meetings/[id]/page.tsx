@@ -1,11 +1,13 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useRef, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Meeting } from "@/lib/comms";
 import { BackLink } from "@/components/BackLink";
+import { Icon } from "@/components/Icon";
 
 interface JoinInfo {
   url: string;
@@ -20,9 +22,29 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const { me } = useAuth();
   const { data: m, reload } = useApi<Meeting>(`/meetings/${id}/`);
-  const [minutes, setMinutes] = useState("");
   const [poll, setPoll] = useState({ question: "", options: "" });
   const [joinInfo, setJoinInfo] = useState<JoinInfo | null>(null);
+  const crRef = useRef<HTMLInputElement>(null);
+  const [crBusy, setCrBusy] = useState(false);
+  const [crErr, setCrErr] = useState<string | null>(null);
+
+  async function uploadMinutes() {
+    const file = crRef.current?.files?.[0];
+    if (!file) return;
+    setCrBusy(true);
+    setCrErr(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      await api(`/meetings/${id}/minutes-document/`, { method: "POST", body: fd });
+      if (crRef.current) crRef.current.value = "";
+      reload();
+    } catch (e) {
+      setCrErr(e instanceof Error ? e.message : "Échec de l'envoi");
+    } finally {
+      setCrBusy(false);
+    }
+  }
 
   if (!m) return <p className="text-sm opacity-60">Chargement…</p>;
   const isOrganizer = m.organizer === me?.id;
@@ -141,15 +163,33 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
       {/* Compte-rendu */}
       <div className="card space-y-2">
         <p className="label">Compte-rendu</p>
-        {m.minutes && <p className="text-sm whitespace-pre-wrap">{m.minutes}</p>}
+        {m.minutes && <p className="text-sm whitespace-pre-wrap opacity-80">{m.minutes}</p>}
+        {m.minutes_document_detail ? (
+          <Link href={`/documents/${m.minutes_document_detail.id}`}
+            className="inline-flex items-center gap-2 text-wagadu-terracotta text-sm">
+            <Icon name="file-text" className="w-4 h-4" />
+            {m.minutes_document_detail.title}
+          </Link>
+        ) : (
+          !m.minutes && <p className="text-sm opacity-60">Aucun compte-rendu déposé.</p>
+        )}
+
         {isOrganizer && m.status !== "cancelled" && (
-          <>
-            <textarea className="input" rows={4} placeholder="Rédiger le compte-rendu"
-              value={minutes || m.minutes} onChange={(e) => setMinutes(e.target.value)} />
-            <button className="btn-primary" onClick={() => act("close", { minutes: minutes || m.minutes })}>
-              Clôturer &amp; enregistrer le CR
-            </button>
-          </>
+          <div className="border-t border-wagadu-sand pt-2 space-y-2">
+            <p className="text-sm opacity-75">
+              Déposez le compte-rendu (document Word ou PDF). La réunion sera clôturée.
+            </p>
+            <input ref={crRef} type="file" accept=".doc,.docx,.pdf,.odt" className="text-sm block" />
+            {crErr && <p className="text-sm text-wagadu-terracotta">{crErr}</p>}
+            <div className="flex gap-2">
+              <button className="btn-primary" disabled={crBusy} onClick={uploadMinutes}>
+                {crBusy ? "Envoi…" : "Déposer le CR & clôturer"}
+              </button>
+              {m.status !== "ended" && (
+                <button className="btn-ghost" onClick={() => act("close")}>Clôturer sans CR</button>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

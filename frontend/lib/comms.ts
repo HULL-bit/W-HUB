@@ -64,6 +64,7 @@ export interface Meeting {
   lobby: boolean;
   agenda: string;
   minutes: string;
+  minutes_document_detail: { id: number; title: string } | null;
   status: string;
   status_display: string;
   join_url: string;

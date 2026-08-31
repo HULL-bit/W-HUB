@@ -62,14 +62,21 @@ class MeetingSerializer(serializers.ModelSerializer):
     polls = MeetingPollSerializer(many=True, read_only=True)
     join_url = serializers.CharField(read_only=True)
     participant_ids = serializers.ListField(child=serializers.UUIDField(), write_only=True, required=False)
+    minutes_document_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Meeting
         fields = [
             "id", "title", "description", "organizer", "organizer_name",
             "start", "end", "room_slug", "access", "lobby", "recurrence_rule",
-            "agenda", "minutes", "minutes_document", "recording_document",
-            "status", "status_display", "join_url", "meeting_participants",
-            "polls", "participant_ids", "created_at",
+            "agenda", "minutes", "minutes_document", "minutes_document_detail",
+            "recording_document", "status", "status_display", "join_url",
+            "meeting_participants", "polls", "participant_ids", "created_at",
         ]
         read_only_fields = ["organizer", "room_slug", "status", "created_at"]
+
+    def get_minutes_document_detail(self, obj) -> dict | None:
+        doc = obj.minutes_document
+        if not doc:
+            return None
+        return {"id": doc.id, "title": doc.title}
