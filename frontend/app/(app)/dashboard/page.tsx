@@ -27,6 +27,7 @@ interface Dashboard {
     my_requests_pending?: number;
     my_onboarding?: { id: number; done: number; total: number; percent: number };
     my_evaluation_todo?: number;
+    my_projects_active?: number;
   };
 }
 
@@ -45,6 +46,7 @@ export default function DashboardPage() {
   if (w.my_requests_pending) tiles.push({ icon: "file-text", label: "Demandes en validation", value: w.my_requests_pending, href: "/requests" });
   if (w.my_leave_pending) tiles.push({ icon: "palm", label: "Congés en attente", value: w.my_leave_pending, href: "/leave" });
   if (w.my_evaluation_todo) tiles.push({ icon: "award", label: "Évaluation à compléter", value: w.my_evaluation_todo, href: "/hr/evaluations", accent: true });
+  if (w.my_projects_active) tiles.push({ icon: "trending-up", label: "Projets en cours", value: w.my_projects_active, href: "/projects" });
   if (w.hr) tiles.push({ icon: "users", label: "Effectif", value: w.hr.headcount, sub: `${w.hr.pending_leave} congé(s) · ${w.hr.contracts_expiring} contrat(s) < 60 j`, href: "/hr" });
   if (w.administration) tiles.push({ icon: "user", label: "Comptes actifs", value: <>{w.administration.users_active}<span className="text-base opacity-50"> / {w.administration.users_total}</span></>, sub: w.administration.users_locked ? `${w.administration.users_locked} verrouillé(s)` : undefined, href: "/admin/users" });
   if (w.audit) tiles.push({ icon: "archive", label: "Journal d'audit", value: w.audit.entries_total, sub: w.audit.critical_recent ? `${w.audit.critical_recent} critique(s)` : undefined, href: "/admin/audit", accent: !!w.audit.critical_recent });

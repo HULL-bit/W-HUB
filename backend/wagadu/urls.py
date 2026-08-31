@@ -23,6 +23,8 @@ api_v1 = [
     path("", include("apps.meetings.urls")),
     path("", include("apps.integrations.urls")),
     path("", include("apps.messaging.urls")),
+    path("", include("apps.projects.urls")),
+    path("", include("apps.availability.urls")),
     path("", include("apps.demands.urls")),
     path("", include("apps.engagement.urls")),
     path("", include("apps.search.urls")),
