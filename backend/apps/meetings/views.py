@@ -112,12 +112,44 @@ class MeetingViewSet(viewsets.ModelViewSet):
             "configured": is_configured(),
         })
 
+    def _guard_organizer(self, request, meeting):
+        if meeting.organizer_id != request.user.id and not request.user.is_super_admin \
+                and not has_permission(request.user, "meetings.manage_all"):
+            raise PermissionDenied("Seul l'organisateur peut effectuer cette action.")
+
     @action(detail=True, methods=["post"], url_path="close")
     def close(self, request, pk=None):
         meeting = self.get_object()
-        if meeting.organizer_id != request.user.id and not request.user.is_super_admin:
-            raise PermissionDenied("Seul l'organisateur peut clôturer.")
+        self._guard_organizer(request, meeting)
         close_meeting(meeting, actor=request.user, minutes=request.data.get("minutes", ""))
+        return Response(MeetingSerializer(meeting, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"], url_path="minutes-document")
+    def minutes_document(self, request, pk=None):
+        """Dépôt du compte-rendu sous forme de fichier (Word / PDF) + clôture."""
+        meeting = self.get_object()
+        self._guard_organizer(request, meeting)
+        upload = request.FILES.get("file")
+        if not upload:
+            raise ValidationError({"file": ["Fichier requis (Word ou PDF)."]})
+
+        from apps.documents.services import create_document
+
+        doc = create_document(
+            data={
+                "title": f"Compte-rendu — {meeting.title}"[:200],
+                "visibility": "restricted",
+                "keywords": "compte-rendu, réunion",
+            },
+            file=upload,
+            actor=request.user,
+            note="Compte-rendu de réunion",
+        )
+        meeting.minutes_document = doc
+        meeting.status = MeetingStatus.ENDED
+        meeting.save(update_fields=["minutes_document", "status"])
+        record(action=AuditAction.UPDATE, module="meetings", actor=request.user, target=meeting,
+               message="Dépôt du compte-rendu (document) + clôture", request=request)
         return Response(MeetingSerializer(meeting, context={"request": request}).data)
 
 

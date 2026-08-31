@@ -406,7 +406,7 @@ class Command(BaseCommand):
     def _projects(self, users, depts):
         from datetime import date, timedelta
 
-        from apps.projects.models import Indicator, Milestone, Project, ProgressUpdate
+        from apps.projects.models import Indicator, Milestone, ProgressUpdate, Project
 
         today = date.today()
         specs = [

@@ -91,6 +91,22 @@ def test_close_meeting_with_minutes(auth, chef):
     assert r.data["status"] == "ended" and "Décisions" in r.data["minutes"]
 
 
+def test_minutes_document_upload_closes_meeting(auth, chef):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    mid = _mk(auth(chef), chef).data["id"]
+    f = SimpleUploadedFile("cr.txt", b"Compte-rendu de la reunion", content_type="text/plain")
+    r = auth(chef).post(f"/api/v1/meetings/{mid}/minutes-document/", {"file": f}, format="multipart")
+    assert r.status_code == 200
+    assert r.data["status"] == "ended"
+    assert r.data["minutes_document_detail"]["title"].startswith("Compte-rendu")
+
+
+def test_minutes_document_requires_file(auth, chef):
+    mid = _mk(auth(chef), chef).data["id"]
+    assert auth(chef).post(f"/api/v1/meetings/{mid}/minutes-document/", {}, format="multipart").status_code == 400
+
+
 def test_meeting_poll_single_choice_vote(auth, chef, make_user):
     p = make_user("voter@wagadu.africa", "employe")
     mid = _mk(auth(chef), chef, [p]).data["id"]
