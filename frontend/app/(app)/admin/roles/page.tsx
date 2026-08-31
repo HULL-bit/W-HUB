@@ -5,6 +5,11 @@ import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { Paginated, Permission, Role } from "@/lib/types";
+import { Icon } from "@/components/Icon";
+
+const slugify = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 export default function RolesPage() {
   const { can } = useAuth();
@@ -13,6 +18,37 @@ export default function RolesPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [draft, setDraft] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newRole, setNewRole] = useState({ name: "", description: "" });
+  const canManage = can("accounts.manage");
+
+  async function createRole(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    try {
+      await api("/roles/", {
+        method: "POST",
+        body: { ...newRole, slug: slugify(newRole.name) },
+      });
+      setNewRole({ name: "", description: "" });
+      setCreating(false);
+      roles.reload();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Échec de création");
+    }
+  }
+
+  async function deleteRole(r: Role) {
+    if (!confirm(`Supprimer le rôle « ${r.name} » ?`)) return;
+    setMsg(null);
+    try {
+      await api(`/roles/${r.id}/`, { method: "DELETE" });
+      if (selected === r.id) setSelected(null);
+      roles.reload();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Suppression impossible.");
+    }
+  }
 
   const current = roles.data?.results.find((r) => r.id === selected) ?? null;
   const byModule = useMemo(() => {
@@ -39,19 +75,48 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-2xl text-wagadu-brown">Rôles &amp; permissions</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-2xl text-wagadu-brown">Rôles &amp; permissions</h1>
+        {canManage && (
+          <button className="btn-primary" onClick={() => setCreating((v) => !v)}>
+            {creating ? "Annuler" : "Nouveau rôle"}
+          </button>
+        )}
+      </div>
+
+      {msg && <p className="text-sm text-wagadu-terracotta">{msg}</p>}
+
+      {creating && (
+        <form onSubmit={createRole} className="card grid sm:grid-cols-2 gap-3">
+          <input className="input" placeholder="Nom du rôle" required value={newRole.name}
+            onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} />
+          <input className="input" placeholder="Description" value={newRole.description}
+            onChange={(e) => setNewRole({ ...newRole, description: e.target.value })} />
+          <p className="text-xs opacity-60 sm:col-span-2">
+            Identifiant : <span className="font-mono">{slugify(newRole.name) || "—"}</span>
+          </p>
+          <button className="btn-primary sm:col-span-2">Créer le rôle</button>
+        </form>
+      )}
 
       <div className="grid md:grid-cols-3 gap-4">
         <div className="card space-y-1">
           {roles.data?.results.map((r) => (
-            <button key={r.id} onClick={() => open(r)}
-              className={`block w-full text-left rounded-xl px-3 py-2 text-sm ${
-                selected === r.id ? "bg-wagadu-gold text-wagadu-ebony" : "hover:bg-wagadu-sand/50"
-              }`}>
-              {r.name}
-              <span className="opacity-60"> · {r.user_count} membre(s)</span>
-              {r.is_system && <span className="badge bg-wagadu-sand ml-2">système</span>}
-            </button>
+            <div key={r.id} className={`flex items-center gap-1 rounded-xl pr-1 ${
+              selected === r.id ? "bg-wagadu-gold text-wagadu-ebony" : "hover:bg-wagadu-sand/50"
+            }`}>
+              <button onClick={() => open(r)} className="flex-1 text-left px-3 py-2 text-sm">
+                {r.name}
+                <span className="opacity-60"> · {r.user_count} membre(s)</span>
+                {r.is_system && <span className="badge bg-wagadu-sand ml-2">système</span>}
+              </button>
+              {canManage && !r.is_system && r.user_count === 0 && (
+                <button title="Supprimer" onClick={() => deleteRole(r)}
+                  className="p-1.5 rounded-lg hover:bg-wagadu-terracotta/15 text-wagadu-terracotta">
+                  <Icon name="trash" className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
 

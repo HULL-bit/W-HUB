@@ -74,9 +74,10 @@ const GROUPS: Group[] = [
   {
     id: "admin",
     label: "Administration",
-    anyPerm: ["accounts.view", "audit.view", "engagement.announce", "platform.manage_validation_flows"],
+    anyPerm: ["accounts.view", "audit.view", "engagement.announce", "platform.manage_validation_flows", "organization.manage"],
     items: [
       { href: "/admin/users", label: "Comptes", perm: "accounts.view", icon: "user" },
+      { href: "/admin/departments", label: "Services", perm: "organization.manage", icon: "users" },
       { href: "/admin/roles", label: "Rôles & permissions", perm: "accounts.view", icon: "key" },
       { href: "/admin/permission-overrides", label: "Exceptions", perm: "accounts.manage_permissions", icon: "sliders" },
       { href: "/admin/announcements", label: "Annonces", perm: "engagement.announce", icon: "megaphone" },

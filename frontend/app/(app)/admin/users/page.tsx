@@ -30,7 +30,7 @@ export default function UsersPage() {
   const [form, setForm] = useState({ ...BLANK });
   const [editId, setEditId] = useState<string | null>(null);
   const [edit, setEdit] = useState({
-    first_name: "", last_name: "", phone: "", job_title: "", bio: "",
+    email: "", first_name: "", last_name: "", phone: "", job_title: "", bio: "",
     role: "", department: "", status: "active", is_active: true,
   });
   const avatarRef = useRef<HTMLInputElement>(null);
@@ -65,6 +65,7 @@ export default function UsersPage() {
     setEditId(u.id);
     if (avatarRef.current) avatarRef.current.value = "";
     setEdit({
+      email: u.email ?? "",
       first_name: u.first_name ?? "",
       last_name: u.last_name ?? "",
       phone: u.phone ?? "",
@@ -167,9 +168,10 @@ export default function UsersPage() {
             {users.data?.results.map((u) =>
               editId === u.id ? (
                 <tr key={u.id} className="bg-wagadu-sand/20">
-                  <td className="py-2 font-mono text-xs align-top">{u.email}</td>
-                  <td className="py-2" colSpan={5}>
+                  <td className="py-2 align-top" colSpan={6}>
                     <div className="grid sm:grid-cols-3 gap-2">
+                      <input className="input sm:col-span-3" type="email" placeholder="Adresse e-mail" value={edit.email}
+                        onChange={(e) => setEdit({ ...edit, email: e.target.value })} />
                       <input className="input" placeholder="Prénom" value={edit.first_name}
                         onChange={(e) => setEdit({ ...edit, first_name: e.target.value })} />
                       <input className="input" placeholder="Nom" value={edit.last_name}
