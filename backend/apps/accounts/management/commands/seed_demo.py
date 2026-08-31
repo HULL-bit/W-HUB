@@ -61,6 +61,7 @@ class Command(BaseCommand):
         self._announcements(users, depts)
         self._meetings(users)
         self._mail(users, depts)
+        self._messaging(users)
         self._summary()
 
     # ------------------------------------------------------------------ #
@@ -360,6 +361,45 @@ class Command(BaseCommand):
             )
             n += int(created)
         self.stdout.write(f"  courriers : {n} créés")
+
+    def _messaging(self, users):
+        from django.utils import timezone
+
+        from apps.messaging.models import Channel, Message
+        from apps.messaging.signals import ensure_department_channel, ensure_general
+        from apps.organization.models import Department
+
+        general = ensure_general()
+        for u in users.values():
+            general.members.add(u)
+        for dept in Department.objects.all():
+            ch = ensure_department_channel(dept)
+            for u in users.values():
+                if u.department_id == dept.id:
+                    ch.members.add(u)
+
+        def seed(channel, pairs):
+            if channel.messages.exists():
+                return
+            for local, body in pairs:
+                Message.objects.create(channel=channel, author=users.get(local), body=body)
+            channel.last_message_at = timezone.now()
+            channel.save(update_fields=["last_message_at"])
+
+        seed(general, [
+            ("moussa.ndiaye", "Bienvenue sur la messagerie interne de Wagadu Hub."),
+            ("aminata.diallo", "Parfait, on centralise les échanges ici."),
+            ("cheikh.gueye", "Les points budget se feront dans le canal Finances."),
+        ])
+        prog = Channel.objects.filter(kind="department", department__code="PROG").first()
+        if prog:
+            seed(prog, [
+                ("aminata.diallo", "Réunion terrain Kolda demain 9h — remontez vos indicateurs."),
+                ("ousmane.ba", "Reçu, tableau prêt ce soir."),
+                ("fatou.sow", "Je joins les retours bénéficiaires."),
+            ])
+        n_msg = Message.objects.count()
+        self.stdout.write(f"  messagerie : {Channel.objects.count()} canaux, {n_msg} messages")
 
     def _summary(self):
         from apps.accounts.models import User

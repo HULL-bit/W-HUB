@@ -66,7 +66,7 @@ const MODULES = [
   { icon: "reports", title: "Demandes & rapports", text: "Circuits de validation, exports et tableaux de bord de pilotage." },
 ] as const;
 
-const PHOTOS = ["/brand/photo-1.jpg", "/brand/photo-3.jpg", "/brand/photo-2.jpg", "/brand/photo-5.jpg"];
+const PHOTOS = ["/brand/photo-scales.jpg", "/brand/photo-child.png", "/brand/photo-2.jpg", "/brand/photo-5.jpg"];
 
 export default function LandingPage() {
   const { me } = useAuth();
@@ -96,9 +96,9 @@ export default function LandingPage() {
           </div>
           <Link
             href={cta.href}
-            className="rounded-xl border border-white/30 px-4 py-2 text-sm font-medium hover:bg-white/10 transition-colors"
+            className="rounded-xl border border-white/30 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition-colors"
           >
-            {cta.label}
+            Accéder à la plateforme
           </Link>
         </header>
 
