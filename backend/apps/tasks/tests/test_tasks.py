@@ -115,6 +115,40 @@ def test_mine_week_scope_filters_upcoming(auth, chef, make_user):
     assert len(resp.data) == 1
 
 
+def test_mine_current_scope_hides_old_done_tasks(auth, chef, make_user):
+    a = make_user("agent6b@wagadu.africa", "employe")
+    tid = _create_task(auth(chef), chef, [a]).data["id"]
+    task = Task.objects.get(id=tid)
+    task.status = "done"
+    task.closed_at = timezone.now() - timezone.timedelta(days=30)
+    task.save(update_fields=["status", "closed_at"])
+    # tâche ouverte de la semaine
+    _create_task(auth(chef), chef, [a])
+    current = auth(a).get("/api/v1/tasks/mine/?scope=current").data
+    assert tid not in [t["id"] for t in current]
+    assert len(current) == 1
+
+
+def test_history_groups_by_period(auth, chef, make_user):
+    a = make_user("agent6c@wagadu.africa", "employe")
+    tid = _create_task(auth(chef), chef, [a]).data["id"]
+    task = Task.objects.get(id=tid)
+    task.status = "done"
+    task.closed_at = timezone.now() - timezone.timedelta(days=40)
+    task.save(update_fields=["status", "closed_at"])
+    data = auth(a).get("/api/v1/tasks/history/?granularity=month&scope=mine").data
+    assert data["granularity"] == "month"
+    assert sum(p["total"] for p in data["periods"]) >= 1
+    assert any(p["done"] >= 1 for p in data["periods"])
+
+
+def test_history_team_scope_denied_for_employee(auth, chef, make_user):
+    a = make_user("agent6d@wagadu.africa", "employe")
+    _create_task(auth(chef), chef, [a])
+    data = auth(a).get("/api/v1/tasks/history/?scope=team").data
+    assert data["scope"] == "mine"
+
+
 def test_comment_notifies_the_other_party(auth, chef, make_user):
     a = make_user("agent7@wagadu.africa", "employe")
     task_id = _create_task(auth(chef), chef, [a]).data["id"]

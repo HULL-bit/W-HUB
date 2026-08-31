@@ -9,9 +9,9 @@ import { PRIORITY_STYLE, STATUS_FALLBACK, STATUS_STYLE, Task } from "@/lib/tasks
 
 export default function MyTasksPage() {
   const { me, can } = useAuth();
-  const [weekOnly, setWeekOnly] = useState(false);
+  const [scope, setScope] = useState<"current" | "">("current");
   const { data, loading, reload } = useApi<Task[]>(
-    `/tasks/mine/${weekOnly ? "?scope=week" : ""}`,
+    `/tasks/mine/${scope ? `?scope=${scope}` : ""}`,
   );
 
   async function setProgress(id: number, progress: string) {
@@ -28,15 +28,24 @@ export default function MyTasksPage() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="font-display text-2xl text-wagadu-brown">Mes tâches</h1>
         <div className="flex gap-2">
-          <button className={weekOnly ? "btn-primary" : "btn-ghost"} onClick={() => setWeekOnly((v) => !v)}>
-            Cette semaine
+          <button className={scope === "current" ? "btn-primary" : "btn-ghost"} onClick={() => setScope("current")}>
+            Semaine en cours
+          </button>
+          <button className={scope === "" ? "btn-primary" : "btn-ghost"} onClick={() => setScope("")}>
+            Toutes
           </button>
           {can("tasks.assign") && <Link href="/tasks/new" className="btn-primary">Nouvelle tâche</Link>}
         </div>
       </div>
 
+      <p className="text-sm opacity-70">
+        {scope === "current"
+          ? "Tâches ouvertes et celles bouclées cette semaine. Les semaines passées sont dans l'historique."
+          : "Toutes vos tâches, y compris terminées."}
+      </p>
+
       {loading && <p className="text-sm opacity-60">Chargement…</p>}
-      {data?.length === 0 && <p className="text-sm opacity-60">Aucune tâche {weekOnly ? "cette semaine" : "en cours"}.</p>}
+      {data?.length === 0 && <p className="text-sm opacity-60">Aucune tâche.</p>}
 
       <div className="space-y-3">
         {data?.map((t) => {
