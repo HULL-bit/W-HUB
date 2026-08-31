@@ -17,6 +17,7 @@ MODULE_REQUESTS = "requests"
 MODULE_MEETINGS = "meetings"
 MODULE_AUDIT = "audit"
 MODULE_PLATFORM = "platform"
+MODULE_PROJECTS = "projects"
 
 # (code, libellé, module)
 PERMISSION_CATALOG: list[tuple[str, str, str]] = [
@@ -70,6 +71,10 @@ PERMISSION_CATALOG: list[tuple[str, str, str]] = [
     # --- Compléments (phase 6) ---
     ("engagement.announce", "Publier une annonce interne", MODULE_PLATFORM),
     ("reports.export", "Exporter les rapports transverses", MODULE_PLATFORM),
+    # --- Projets (phase 7 — lot B) ---
+    ("projects.view", "Consulter les projets", MODULE_PROJECTS),
+    ("projects.manage", "Créer et piloter des projets (jalons, indicateurs, suivi)", MODULE_PROJECTS),
+    ("projects.oversee", "Superviser l'ensemble des projets (transverse)", MODULE_PROJECTS),
 ]
 
 ALL_PERMISSION_CODES = {code for code, _, _ in PERMISSION_CATALOG}
@@ -87,6 +92,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "mail.view",
             "meetings.create",
             "requests.submit",
+            "projects.view",
         ],
     },
     "chef": {
@@ -115,6 +121,8 @@ SYSTEM_ROLES: dict[str, dict] = {
             "engagement.announce",
             "reports.export",
             "organization.view",
+            "projects.view",
+            "projects.manage",
         ],
     },
     "rh": {
@@ -142,6 +150,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             "engagement.announce",
             "reports.export",
             "organization.view",
+            "projects.view",
         ],
     },
     "admin": {
@@ -186,6 +195,9 @@ SYSTEM_ROLES: dict[str, dict] = {
             "requests.manage_types",
             "engagement.announce",
             "reports.export",
+            "projects.view",
+            "projects.manage",
+            "projects.oversee",
         ],
     },
 }

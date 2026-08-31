@@ -23,7 +23,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/tasks", label: "Mes tâches", icon: "check" },
       { href: "/agenda", label: "Mon agenda", icon: "calendar" },
-      { href: "/leave", label: "Mes congés", icon: "palm" },
+      { href: "/availability", label: "Mes disponibilités", icon: "palm" },
       { href: "/requests", label: "Mes demandes", icon: "file-text" },
       { href: "/documents/received", label: "Documents reçus", icon: "inbox" },
     ],
@@ -40,15 +40,21 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    id: "projects",
+    label: "Projets",
+    anyPerm: ["projects.view"],
+    items: [
+      { href: "/projects", label: "Projets", perm: "projects.view", icon: "trending-up" },
+    ],
+  },
+  {
     id: "hr",
     label: "Ressources humaines",
-    anyPerm: ["hr.view", "hr.leave.validate"],
+    anyPerm: ["hr.view"],
     items: [
       { href: "/hr", label: "Tableau de bord RH", perm: "hr.view", icon: "bar-chart" },
       { href: "/hr/employees", label: "Effectif", perm: "hr.view", icon: "users" },
-      { href: "/hr/lifecycle", label: "Intégration / Départ", perm: "hr.view", icon: "refresh" },
       { href: "/hr/evaluations", label: "Évaluations", icon: "star" },
-      { href: "/leave/validate", label: "Congés à valider", perm: "hr.leave.validate", icon: "check-square" },
     ],
   },
   {
@@ -81,7 +87,6 @@ const GROUPS: Group[] = [
       { href: "/admin/roles", label: "Rôles & permissions", perm: "accounts.view", icon: "key" },
       { href: "/admin/permission-overrides", label: "Exceptions", perm: "accounts.manage_permissions", icon: "sliders" },
       { href: "/admin/announcements", label: "Annonces", perm: "engagement.announce", icon: "megaphone" },
-      { href: "/admin/validation-flows", label: "Circuits de validation", perm: "platform.manage_validation_flows", icon: "route" },
       { href: "/admin/audit", label: "Journal d'audit", perm: "audit.view", icon: "archive" },
     ],
   },

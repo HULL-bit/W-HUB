@@ -62,6 +62,8 @@ class Command(BaseCommand):
         self._meetings(users)
         self._mail(users, depts)
         self._messaging(users)
+        self._projects(users, depts)
+        self._availability(users)
         self._summary()
 
     # ------------------------------------------------------------------ #
@@ -400,6 +402,123 @@ class Command(BaseCommand):
             ])
         n_msg = Message.objects.count()
         self.stdout.write(f"  messagerie : {Channel.objects.count()} canaux, {n_msg} messages")
+
+    def _projects(self, users, depts):
+        from datetime import date, timedelta
+
+        from apps.projects.models import Indicator, Milestone, Project, ProgressUpdate
+
+        today = date.today()
+        specs = [
+            {
+                "code": "BT-2026-01", "name": "Blue-Track — Accès à l'eau, région de Kolda",
+                "status": "active", "lead": "aminata.diallo", "dept": "PROG",
+                "donor": "Union Européenne", "budget": 185000000, "location": "Kolda, Sénégal",
+                "start": today - timedelta(days=120), "end": today + timedelta(days=245),
+                "summary": "Réhabilitation de forages et sensibilisation à l'hygiène dans 14 villages.",
+                "milestones": [
+                    ("Diagnostic des points d'eau", "done", -90),
+                    ("Réhabilitation de 8 forages", "in_progress", 30),
+                    ("Formation des comités de gestion", "todo", 90),
+                    ("Évaluation finale", "todo", 230),
+                ],
+                "indicators": [
+                    ("Forages réhabilités", "forages", 14, 6),
+                    ("Personnes bénéficiaires", "pers.", 9000, 3800),
+                    ("Comités de gestion formés", "comités", 14, 2),
+                ],
+                "updates": [
+                    (-25, "aminata.diallo", "3 forages livrés ce mois, 2 chantiers en cours à Saré Yoba."),
+                    (-5, "ousmane.ba", "Retard d'approvisionnement en pompes, livraison attendue semaine prochaine."),
+                ],
+            },
+            {
+                "code": "BT-2026-02", "name": "Nutrition infantile — phase pilote",
+                "status": "applying", "lead": "khady.cisse", "dept": "TERR",
+                "donor": "UNICEF", "budget": 62000000, "location": "Ziguinchor",
+                "deadline": today + timedelta(days=18),
+                "summary": "Dépistage et prise en charge de la malnutrition aiguë chez les moins de 5 ans.",
+                "milestones": [("Dépôt du dossier", "in_progress", 18), ("Audition bailleur", "todo", 45)],
+                "indicators": [("Enfants ciblés", "enfants", 2500, 0)],
+                "updates": [(-2, "khady.cisse", "Budget révisé et lettre de partenariat de la région signée.")],
+            },
+            {
+                "code": "BT-2025-08", "name": "Agroécologie et résilience climatique",
+                "status": "completed", "lead": "aminata.diallo", "dept": "PROG",
+                "donor": "AFD", "budget": 140000000, "location": "Tambacounda",
+                "start": today - timedelta(days=520), "end": today - timedelta(days=40),
+                "summary": "Appui à 600 exploitations familiales : semences, compostage, maraîchage.",
+                "milestones": [("Sélection des bénéficiaires", "done", -480), ("Distribution intrants", "done", -400),
+                               ("Suivi des rendements", "done", -90), ("Rapport final", "done", -35)],
+                "indicators": [("Exploitations appuyées", "expl.", 600, 612), ("Hausse de rendement", "%", 25, 31)],
+                "updates": [(-38, "aminata.diallo", "Rapport final validé par le bailleur. Taux de décaissement 98 %.")],
+            },
+            {
+                "code": "BT-2026-03", "name": "Numérisation des services communautaires",
+                "status": "prospect", "lead": "moussa.ndiaye", "dept": "COM",
+                "donor": "À identifier", "budget": None, "location": "Dakar + régions",
+                "summary": "Concept note : plateforme mobile de signalement et de suivi des services de base.",
+                "milestones": [("Note de cadrage", "in_progress", 25)],
+                "indicators": [],
+                "updates": [],
+            },
+        ]
+
+        n = 0
+        for s in specs:
+            project, created = Project.objects.get_or_create(
+                code=s["code"],
+                defaults={
+                    "name": s["name"], "summary": s["summary"], "status": s["status"],
+                    "lead": users.get(s["lead"]), "department": depts.get(s["dept"]),
+                    "donor": s["donor"], "budget": s["budget"], "location": s["location"],
+                    "application_deadline": s.get("deadline"),
+                    "start_date": s.get("start"), "end_date": s.get("end"),
+                    "created_by": users.get(s["lead"]),
+                },
+            )
+            if not created:
+                continue
+            n += 1
+            if project.lead_id:
+                project.members.add(project.lead)
+            for i, (title, st, off) in enumerate(s["milestones"]):
+                Milestone.objects.create(
+                    project=project, title=title, status=st, order=i,
+                    due_date=today + timedelta(days=off),
+                    completed_at=today + timedelta(days=off) if st == "done" else None,
+                )
+            for name, unit, target, current in s["indicators"]:
+                Indicator.objects.create(
+                    project=project, name=name, unit=unit, target_value=target, current_value=current,
+                )
+            for off, local, body in s["updates"]:
+                ProgressUpdate.objects.create(
+                    project=project, author=users.get(local), date=today + timedelta(days=off), body=body,
+                )
+        self.stdout.write(f"  projets : {n} créés")
+
+    def _availability(self, users):
+        from datetime import date, timedelta
+
+        from apps.availability.models import Availability
+
+        today = date.today()
+        rows = [
+            ("ousmane.ba", 3, 3, "mission", "Descente terrain Kolda"),
+            ("awa.faye", 6, 7, "absent", "Rendez-vous administratif"),
+            ("mariama.balde", 2, 2, "remote", ""),
+            ("modou.kane", 10, 14, "mission", "Collecte de données Ziguinchor"),
+            ("fatou.sow", 4, 4, "afternoon", "Formation externe"),
+        ]
+        n = 0
+        for local, s_off, e_off, kind, note in rows:
+            _, created = Availability.objects.get_or_create(
+                user=users[local], start_date=today + timedelta(days=s_off),
+                defaults={"end_date": today + timedelta(days=e_off), "kind": kind, "note": note},
+            )
+            n += int(created)
+        self.stdout.write(f"  disponibilités : {n} signalées")
 
     def _summary(self):
         from apps.accounts.models import User

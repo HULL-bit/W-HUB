@@ -155,6 +155,14 @@ class DashboardView(APIView):
             evaluator=user, status="self_assessed"
         ).count()
 
+        from apps.projects.models import Project
+
+        my_projects = Project.objects.filter(
+            Q(lead=user) | Q(members=user), status="active"
+        ).distinct()
+        if my_projects.exists():
+            data["widgets"]["my_projects_active"] = my_projects.count()
+
     @staticmethod
     def _shortcuts(perms: set[str]) -> list[dict]:
         catalog = [

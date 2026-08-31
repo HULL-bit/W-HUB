@@ -168,6 +168,8 @@ AUTO_TRACKED_MODELS: set[str] = set(
             "demands.RequestType",
             "engagement.Announcement",
             "engagement.Poll",
+            "projects.Project",
+            "projects.Milestone",
         },
     )
 )

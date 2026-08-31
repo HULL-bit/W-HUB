@@ -65,6 +65,8 @@ LOCAL_APPS = [
     "apps.meetings",
     "apps.integrations",
     "apps.messaging",
+    "apps.projects",
+    "apps.availability",
     "apps.demands",
     "apps.engagement",
     "apps.search",
