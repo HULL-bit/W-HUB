@@ -162,10 +162,90 @@ class TaskViewSet(viewsets.ModelViewSet):
         qs = Task.objects.filter(assignments__user=request.user).prefetch_related(
             "assignments__user", "labels"
         ).distinct()
-        if request.query_params.get("scope") == "week":
+        scope = request.query_params.get("scope")
+        if scope == "week":
             end = timezone.now() + timezone.timedelta(days=7)
             qs = qs.filter(due_at__lte=end).exclude(status=TaskStatus.DONE)
+        elif scope == "current":
+            # Semaine en cours : tâches ouvertes + celles bouclées cette semaine.
+            # Une fois la semaine passée, les tâches terminées basculent dans l'historique.
+            monday = (timezone.now() - timezone.timedelta(days=timezone.now().weekday())).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            qs = qs.filter(
+                ~Q(status=TaskStatus.DONE) | Q(closed_at__gte=monday)
+            )
         return Response(TaskSerializer(qs, many=True).data)
+
+    @action(detail=False, methods=["get"])
+    def history(self, request):
+        """Historique des tâches regroupé par semaine, mois ou semestre.
+
+        ?granularity=week|month|semester  ?scope=mine|team
+        """
+        import datetime as _dt
+
+        gran = request.query_params.get("granularity", "month")
+        scope = request.query_params.get("scope", "mine")
+        can_team = (
+            request.user.is_super_admin
+            or has_permission(request.user, "tasks.oversee")
+            or has_permission(request.user, "tasks.assign")
+        )
+        if scope == "team" and can_team:
+            qs = visible_tasks(request.user)
+        else:
+            scope = "mine"
+            qs = Task.objects.filter(assignments__user=request.user).prefetch_related(
+                "assignments__user", "labels"
+            )
+        qs = qs.distinct()
+
+        MONTHS = ["", "janvier", "février", "mars", "avril", "mai", "juin", "juillet",
+                  "août", "septembre", "octobre", "novembre", "décembre"]
+
+        def ref_date(task) -> _dt.date:
+            moment = task.closed_at or task.due_at or task.created_at
+            return timezone.localtime(moment).date()
+
+        def key_of(d: _dt.date):
+            if gran == "week":
+                iso = d.isocalendar()
+                return (iso[0], iso[1], 0)
+            if gran == "semester":
+                return (d.year, 1 if d.month <= 6 else 2, 0)
+            return (d.year, d.month, 0)
+
+        def label_of(k):
+            if gran == "week":
+                return f"Semaine {k[1]} — {k[0]}"
+            if gran == "semester":
+                return f"{'1er' if k[1] == 1 else '2e'} semestre {k[0]}"
+            return f"{MONTHS[k[1]].capitalize()} {k[0]}"
+
+        buckets: dict = {}
+        for task in qs:
+            buckets.setdefault(key_of(ref_date(task)), []).append(task)
+
+        periods = []
+        for k in sorted(buckets, reverse=True)[:10]:
+            tasks = buckets[k]
+            done = [t for t in tasks if t.status == TaskStatus.DONE]
+            on_time = sum(
+                1 for t in done
+                if not t.due_at or (t.closed_at and t.closed_at <= t.due_at)
+            )
+            tasks.sort(key=lambda t: (t.status != TaskStatus.DONE, t.closed_at or t.due_at or t.created_at))
+            periods.append({
+                "key": f"{k[0]}-{k[1]}",
+                "label": label_of(k),
+                "total": len(tasks),
+                "done": len(done),
+                "on_time": on_time,
+                "late": len(done) - on_time,
+                "tasks": TaskSerializer(tasks, many=True).data,
+            })
+        return Response({"granularity": gran, "scope": scope, "periods": periods})
 
     @action(detail=False, methods=["get"])
     def board(self, request):

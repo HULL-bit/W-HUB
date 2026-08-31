@@ -5,6 +5,7 @@ import { SectionTabs, Tab } from "@/components/SectionTabs";
 
 const TABS: Tab[] = [
   { href: "/tasks", label: "Mes tâches", exact: true },
+  { href: "/tasks/history", label: "Historique" },
   { href: "/tasks/board", label: "Suivi", perm: "tasks.assign" },
   { href: "/tasks/calendar", label: "Calendrier" },
   { href: "/tasks/recurring", label: "Récurrentes", perm: "tasks.assign" },
