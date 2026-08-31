@@ -27,6 +27,17 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
   const crRef = useRef<HTMLInputElement>(null);
   const [crBusy, setCrBusy] = useState(false);
   const [crErr, setCrErr] = useState<string | null>(null);
+  const [copied, setCopied] = useState<"" | "link" | "invite">("");
+
+  async function copy(text: string, which: "link" | "invite") {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      setTimeout(() => setCopied(""), 2000);
+    } catch {
+      window.prompt("Copiez le lien :", text);
+    }
+  }
 
   async function uploadMinutes() {
     const file = crRef.current?.files?.[0];
@@ -106,6 +117,39 @@ export default function MeetingDetailPage({ params }: { params: Promise<{ id: st
               </button>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Invitation externe */}
+      <div className="card space-y-2">
+        <p className="label mb-0">Inviter une personne extérieure à l&apos;ONG</p>
+        <p className="text-sm opacity-70">
+          Ce lien donne accès à la visioconférence sans compte Wagadu&nbsp;Hub.
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <code className="font-mono text-xs bg-wagadu-sand/50 px-2 py-1 rounded flex-1 min-w-[14rem] truncate">
+            {m.join_url}
+          </code>
+          <button className="btn-ghost text-sm" onClick={() => copy(m.join_url, "link")}>
+            <Icon name="inbox" className="w-4 h-4" /> {copied === "link" ? "Copié !" : "Copier le lien"}
+          </button>
+          <button className="btn-primary text-sm"
+            onClick={() => copy(
+              `Réunion : ${m.title}\n`
+              + `Date : ${new Date(m.start).toLocaleString("fr-FR")}\n`
+              + `Lien de connexion : ${m.join_url}\n`
+              + (m.agenda ? `\nOrdre du jour :\n${m.agenda}\n` : "")
+              + `\n— Wagadu Africa`,
+              "invite",
+            )}>
+            {copied === "invite" ? "Copié !" : "Copier l'invitation"}
+          </button>
+        </div>
+        {m.access === "invited" && (
+          <p className="text-xs text-wagadu-terracotta">
+            Accès « sur invitation » : pensez à passer la réunion en accès ouvert
+            si l&apos;invité n&apos;est pas dans la liste des participants.
+          </p>
         )}
       </div>
 
