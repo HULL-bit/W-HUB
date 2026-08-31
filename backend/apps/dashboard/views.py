@@ -168,15 +168,15 @@ class DashboardView(APIView):
         catalog = [
             ("tasks.submit", "Soumettre une tâche", "/tasks"),
             ("tasks.assign", "Assigner une tâche", "/tasks/new"),
+            ("projects.manage", "Créer un projet", "/projects"),
             ("documents.send", "Envoyer un document", "/documents/send"),
             ("meetings.create", "Planifier une réunion", "/meetings/new"),
             ("mail.register", "Enregistrer un courrier", "/mail/new"),
             ("hr.view", "Tableau de bord RH", "/hr"),
-            ("hr.leave.validate", "Valider des congés", "/leave/validate"),
             ("accounts.manage", "Gérer les comptes", "/admin/users"),
             ("audit.view", "Journal d'audit", "/admin/audit"),
         ]
-        shortcuts = [{"label": "Demander un congé", "url": "/leave"}]
+        shortcuts = [{"label": "Signaler une indisponibilité", "url": "/availability"}]
         shortcuts += [
             {"label": label, "url": url}
             for code, label, url in catalog

@@ -18,5 +18,3 @@
 | [../scripts/README.md](../scripts/README.md) | Test de bout en bout de l'API (`smoke_test.py`) |
 
 Cahier des charges de référence : `../Cahier_des_charges_Wagadu_Africa.docx`.
-admin@wagadu.africa
-Wagadu2026!Hub
