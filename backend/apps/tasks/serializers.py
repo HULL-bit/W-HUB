@@ -96,7 +96,7 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "priority", "priority_display",
             "status", "status_display", "created_by", "created_by_name",
-            "assigned_department", "assigned_team", "labels", "labels_detail",
+            "assigned_department", "assigned_team", "project", "labels", "labels_detail",
             "parent", "start_at", "due_at", "estimated_hours", "is_overdue",
             "assignments", "checklist", "attachments", "comments", "submissions",
             "subtasks", "created_at", "closed_at",
@@ -121,7 +121,7 @@ class TaskWriteSerializer(serializers.ModelSerializer):
         model = Task
         fields = [
             "id", "title", "description", "priority", "assigned_department",
-            "assigned_team", "parent", "start_at", "due_at", "estimated_hours",
+            "assigned_team", "project", "parent", "start_at", "due_at", "estimated_hours",
             "assignee_ids", "label_ids",
         ]
 

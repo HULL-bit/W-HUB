@@ -10,7 +10,7 @@ class AuditLogEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditLogEntry
         fields = [
-            "id", "timestamp", "actor", "actor_label", "actor_is_admin",
+            "id", "timestamp", "actor", "actor_label", "actor_is_admin", "confidential",
             "module", "action", "action_display", "severity", "severity_display",
             "target_type", "target_id", "target_repr", "changes", "message",
             "ip_address", "user_agent",

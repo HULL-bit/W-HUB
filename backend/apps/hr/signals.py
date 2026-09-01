@@ -1,15 +1,32 @@
-"""Déclenchement automatique des processus d'intégration / de départ."""
+"""Processus d'intégration / de départ automatiques."""
 from __future__ import annotations
 
+from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from .models import Employee, HrStatus, LifecycleKind
 
 
+def ensure_employee_fiche(user) -> Employee | None:
+    """Crée la fiche employé d'un compte collaborateur si elle n'existe pas."""
+    if not user.is_active or user.is_super_admin:
+        return None
+    fiche = Employee.objects.filter(user=user).first()
+    if fiche:
+        return fiche
+    n = Employee.objects.count() + 1
+    return Employee.objects.create(
+        user=user,
+        matricule=f"WA-{n:04d}",
+        job_title=getattr(user, "job_title", "") or "",
+        hr_status=HrStatus.ACTIVE,
+    )
+
+
 @receiver(post_save, sender=Employee)
 def _auto_onboarding(sender, instance, created, **kwargs):
-    if not created:
+    if not created or not settings.WAGADU.get("HR_AUTO_ONBOARDING", False):
         return
     from .lifecycle import start_lifecycle
     from .models import LifecycleTemplate

@@ -54,6 +54,25 @@ export interface ProgressUpdate {
   created_at: string;
 }
 
+export interface ProjectDocument {
+  id: number;
+  project: number;
+  document_id: number;
+  title: string;
+  size: number | null;
+  added_by_name: string;
+  added_at: string;
+}
+
+export interface ProjectTaskBrief {
+  id: number;
+  title: string;
+  status: string;
+  status_display: string;
+  priority: string;
+  due_at: string | null;
+}
+
 export interface ProjectDetail extends ProjectRow {
   description: string;
   members: string[];
@@ -63,6 +82,8 @@ export interface ProjectDetail extends ProjectRow {
   milestones: Milestone[];
   indicators: Indicator[];
   updates: ProgressUpdate[];
+  documents: ProjectDocument[];
+  tasks: ProjectTaskBrief[];
 }
 
 export const PROJECT_STATUSES: { value: string; label: string }[] = [

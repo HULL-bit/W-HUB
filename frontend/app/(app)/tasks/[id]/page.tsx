@@ -2,26 +2,54 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { PRIORITY_STYLE, TASK_COLUMNS, Task } from "@/lib/tasks";
 import { BackLink } from "@/components/BackLink";
+import { Icon } from "@/components/Icon";
+
+const PRIORITIES = [["low", "Basse"], ["normal", "Normale"], ["high", "Haute"], ["urgent", "Urgente"]] as const;
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { me, can } = useAuth();
+  const router = useRouter();
   const { data: task, reload } = useApi<Task>(`/tasks/${id}/`);
   const [report, setReport] = useState("");
   const [hours, setHours] = useState("");
   const [comment, setComment] = useState("");
   const [reviewComment, setReviewComment] = useState<Record<string, string>>({});
   const [newItem, setNewItem] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", priority: "normal", due_at: "" });
 
   if (!task) return <p className="text-sm opacity-60">Chargement…</p>;
   const mine = task.assignments.find((a) => a.user === me?.id);
   const isChef = task.created_by === me?.id || can("tasks.oversee");
+  const canManage = isChef || can("tasks.assign");
   const mySubmission = task.submissions.find((s) => s.submitted_by === me?.id);
+
+  function startEdit() {
+    setForm({
+      title: task!.title,
+      description: task!.description ?? "",
+      priority: task!.priority,
+      due_at: task!.due_at ? task!.due_at.slice(0, 16) : "",
+    });
+    setEditing(true);
+  }
+  async function saveEdit() {
+    await api(`/tasks/${id}/`, { method: "PATCH", body: { ...form, due_at: form.due_at || null } });
+    setEditing(false);
+    reload();
+  }
+  async function removeTask() {
+    if (!confirm("Supprimer définitivement cette tâche ?")) return;
+    await api(`/tasks/${id}/`, { method: "DELETE" });
+    router.push("/tasks");
+  }
 
   async function act(path: string, body: unknown = {}) {
     await api(`/tasks/${id}/${path}/`, { method: "POST", body });
@@ -54,16 +82,47 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             Créée par {task.created_by_name} · {task.status_display}
           </p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 items-center">
           <span className={`badge ${PRIORITY_STYLE[task.priority]}`}>{task.priority_display}</span>
           {task.is_overdue && <span className="badge bg-wagadu-terracotta/25 text-wagadu-terracotta">En retard</span>}
+          {canManage && !editing && (
+            <>
+              <button className="p-1.5 rounded-lg hover:bg-wagadu-sand/60 text-wagadu-brown" title="Modifier" onClick={startEdit}>
+                <Icon name="pencil" className="w-4 h-4" />
+              </button>
+              <button className="p-1.5 rounded-lg text-wagadu-terracotta hover:bg-wagadu-terracotta/10" title="Supprimer" onClick={removeTask}>
+                <Icon name="trash" className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {task.description && <div className="card whitespace-pre-wrap text-sm">{task.description}</div>}
-      {task.due_at && (
-        <p className="text-sm font-mono">Échéance : {new Date(task.due_at).toLocaleString("fr-FR")}
-          {task.estimated_hours && ` · charge estimée ${task.estimated_hours} h`}</p>
+      {editing ? (
+        <div className="card grid sm:grid-cols-2 gap-3">
+          <input className="input sm:col-span-2" value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Titre" />
+          <textarea className="input sm:col-span-2" rows={3} value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" />
+          <select className="input" value={form.priority}
+            onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+            {PRIORITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <input type="datetime-local" className="input" value={form.due_at}
+            onChange={(e) => setForm({ ...form, due_at: e.target.value })} />
+          <div className="sm:col-span-2 flex gap-2">
+            <button className="btn-primary" onClick={saveEdit}>Enregistrer</button>
+            <button className="btn-ghost" onClick={() => setEditing(false)}>Annuler</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {task.description && <div className="card whitespace-pre-wrap text-sm">{task.description}</div>}
+          {task.due_at && (
+            <p className="text-sm font-mono">Échéance : {new Date(task.due_at).toLocaleString("fr-FR")}
+              {task.estimated_hours && ` · charge estimée ${task.estimated_hours} h`}</p>
+          )}
+        </>
       )}
 
       {/* Kanban status (chef) */}

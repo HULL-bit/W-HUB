@@ -44,6 +44,7 @@ export interface AuditEntry {
   timestamp: string;
   actor_label: string;
   actor_is_admin: boolean;
+  confidential: boolean;
   module: string;
   action: string;
   action_display: string;

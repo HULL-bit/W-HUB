@@ -75,6 +75,8 @@ def record(
     changes: dict | None = None,
     message: str = "",
     severity: str = AuditSeverity.INFO,
+    confidential: bool = False,
+    notify_admins: bool = False,
     request=None,
 ) -> AuditLogEntry:
     request = request or get_current_request()
@@ -97,6 +99,7 @@ def record(
         actor=actor,
         actor_label=(getattr(actor, "email", "") or "système") if actor else "système",
         actor_is_admin=_actor_is_admin(actor),
+        confidential=confidential,
         module=module,
         action=action,
         severity=severity,
@@ -108,18 +111,19 @@ def record(
         ip_address=ip,
         user_agent=ua,
     )
-    _maybe_alert(entry)
+    _maybe_alert(entry, force=notify_admins)
     return entry
 
 
-def _maybe_alert(entry: AuditLogEntry) -> None:
-    """Alertes automatiques sur actions critiques (section 7)."""
-    if entry.severity != AuditSeverity.CRITICAL:
+def _maybe_alert(entry: AuditLogEntry, *, force: bool = False) -> None:
+    """Notifie les administrateurs : actions critiques, confidentielles, ou forcées."""
+    if not (force or entry.confidential or entry.severity == AuditSeverity.CRITICAL):
         return
     from apps.notifications.services import notify_admins
 
+    tag = "confidentielle" if entry.confidential else "critique"
     notify_admins(
-        title="Action critique dans le journal d'audit",
+        title=f"Action {tag} dans le journal d'audit",
         body=f"{entry.actor_label} — {entry.get_action_display()} — {entry.target_repr}",
         url="/admin/audit",
     )
