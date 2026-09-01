@@ -1,12 +1,14 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { BackLink } from "@/components/BackLink";
 import { Icon } from "@/components/Icon";
+import { humanSize } from "@/lib/documents";
 import {
   MILESTONE_STATUS_STYLE,
   PROJECT_STATUSES,
@@ -25,10 +27,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const { can } = useAuth();
   const router = useRouter();
   const { data, reload, loading, setData } = useApi<ProjectDetail>(`/projects/${id}/`);
-  const [tab, setTab] = useState<"milestones" | "indicators" | "updates">("milestones");
+  const [tab, setTab] = useState<"milestones" | "indicators" | "updates" | "documents" | "tasks">("milestones");
   const [ms, setMs] = useState({ title: "", due_date: "" });
   const [ind, setInd] = useState({ name: "", unit: "", target_value: "", current_value: "" });
   const [upd, setUpd] = useState({ date: new Date().toISOString().slice(0, 10), body: "", spent_amount: "" });
+  const [newTask, setNewTask] = useState({ title: "", due_at: "" });
+  const docRef = useRef<HTMLInputElement>(null);
+  const [docBusy, setDocBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", summary: "", description: "", donor: "", budget: "", location: "" });
@@ -145,7 +150,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Onglets */}
       <nav className="flex gap-1 border-b border-wagadu-sand">
-        {([["milestones", `Jalons (${p.milestones.length})`], ["indicators", `Indicateurs (${p.indicators.length})`], ["updates", `Suivi (${p.updates.length})`]] as const).map(([k, label]) => (
+        {([
+          ["milestones", `Jalons (${p.milestones.length})`],
+          ["tasks", `Tâches (${p.tasks.length})`],
+          ["documents", `Documents (${p.documents.length})`],
+          ["indicators", `Indicateurs (${p.indicators.length})`],
+          ["updates", `Suivi (${p.updates.length})`],
+        ] as const).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-3 py-2 text-sm rounded-t-lg border-b-2 -mb-px ${
               tab === k ? "border-wagadu-gold text-wagadu-brown font-medium bg-white" : "border-transparent text-wagadu-brown/60"
@@ -271,6 +282,99 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             ))}
             {p.updates.length === 0 && <p className="py-2 text-sm opacity-60">Aucun point de suivi.</p>}
+          </div>
+        </div>
+      )}
+
+      {tab === "tasks" && (
+        <div className="space-y-2">
+          {manage && (
+            <form className="card flex flex-wrap gap-2 items-end"
+              onSubmit={(e) => { e.preventDefault(); act(async () => {
+                await api("/tasks/", { method: "POST", body: {
+                  title: newTask.title, project: p.id, priority: "normal",
+                  due_at: newTask.due_at || null,
+                } });
+                setNewTask({ title: "", due_at: "" });
+              }); }}>
+              <input className="input flex-1 min-w-[12rem]" placeholder="Nouvelle tâche du projet" required
+                value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
+              <input type="datetime-local" className="input" value={newTask.due_at}
+                onChange={(e) => setNewTask({ ...newTask, due_at: e.target.value })} />
+              <button className="btn-primary">Ajouter</button>
+            </form>
+          )}
+          <div className="card divide-y divide-wagadu-sand">
+            {p.tasks.map((t) => (
+              <div key={t.id} className="py-2 flex items-center justify-between gap-2">
+                <Link href={`/tasks/${t.id}`} className="text-wagadu-brown hover:underline">{t.title}</Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  {t.due_at && (
+                    <span className="text-xs font-mono opacity-60">
+                      {new Date(t.due_at).toLocaleDateString("fr-FR")}
+                    </span>
+                  )}
+                  <span className="badge bg-wagadu-sand">{t.status_display}</span>
+                  {manage && (
+                    <button className="p-1 rounded text-wagadu-terracotta hover:bg-wagadu-terracotta/10"
+                      title="Supprimer la tâche"
+                      onClick={() => { if (confirm("Supprimer cette tâche ?")) act(() => api(`/tasks/${t.id}/`, { method: "DELETE" })); }}>
+                      <Icon name="trash" className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {p.tasks.length === 0 && <p className="py-2 text-sm opacity-60">Aucune tâche rattachée à ce projet.</p>}
+          </div>
+        </div>
+      )}
+
+      {tab === "documents" && (
+        <div className="space-y-2">
+          {manage && (
+            <div className="card flex flex-wrap gap-2 items-center">
+              <input ref={docRef} type="file" className="text-sm flex-1" />
+              <button className="btn-primary" disabled={docBusy}
+                onClick={async () => {
+                  const file = docRef.current?.files?.[0];
+                  if (!file) return;
+                  setDocBusy(true); setErr(null);
+                  try {
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    fd.append("title", file.name);
+                    await api(`/projects/${id}/documents/`, { method: "POST", body: fd });
+                    if (docRef.current) docRef.current.value = "";
+                    reload();
+                  } catch (e) {
+                    setErr(e instanceof Error ? e.message : "Échec de l'envoi");
+                  } finally { setDocBusy(false); }
+                }}>
+                {docBusy ? "Envoi…" : "Ajouter un document"}
+              </button>
+            </div>
+          )}
+          <div className="card divide-y divide-wagadu-sand">
+            {p.documents.map((d) => (
+              <div key={d.id} className="py-2 flex items-center justify-between gap-2">
+                <Link href={`/documents/${d.document_id}`} className="flex items-center gap-2 text-wagadu-brown hover:underline">
+                  <Icon name="file-text" className="w-4 h-4 shrink-0" />
+                  <span>{d.title}</span>
+                  {d.size != null && <span className="text-xs opacity-50">· {humanSize(d.size)}</span>}
+                </Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs opacity-60">{d.added_by_name}</span>
+                  {manage && (
+                    <button className="p-1 rounded text-wagadu-terracotta hover:bg-wagadu-terracotta/10"
+                      title="Retirer" onClick={() => { if (confirm("Retirer ce document ?")) act(() => api(`/project-documents/${d.id}/`, { method: "DELETE" })); }}>
+                      <Icon name="trash" className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {p.documents.length === 0 && <p className="py-2 text-sm opacity-60">Aucun document.</p>}
           </div>
         </div>
       )}

@@ -65,7 +65,12 @@ export default function AuditPage() {
                 <td className="text-xs">{e.actor_label}</td>
                 <td>{e.module}</td>
                 <td>{e.action_display}</td>
-                <td className="text-xs">{e.target_repr || e.message}</td>
+                <td className="text-xs">
+                  {e.target_repr || e.message}
+                  {e.confidential && (
+                    <span className="badge bg-wagadu-bark text-wagadu-ivory ml-2">confidentiel</span>
+                  )}
+                </td>
                 <td>
                   <span className={`badge ${SEVERITY_STYLE[e.severity] ?? "bg-wagadu-sand"}`}>{e.severity}</span>
                 </td>

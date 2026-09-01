@@ -7,6 +7,12 @@ from apps.notifications.models import Notification
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def _enable_onboarding(settings):
+    """Le cycle de vie RH est optionnel (désactivé par défaut) — on l'active ici."""
+    settings.WAGADU = {**settings.WAGADU, "HR_AUTO_ONBOARDING": True}
+
+
 def test_onboarding_auto_starts_on_employee_creation(make_employee):
     emp = make_employee("newhire@wagadu.africa")
     proc = LifecycleProcess.objects.filter(employee=emp, kind=LifecycleKind.ONBOARDING).first()

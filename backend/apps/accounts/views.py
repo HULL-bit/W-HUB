@@ -105,7 +105,7 @@ class PersonalDataExportView(APIView):
         payload = build_personal_export(request.user)
         record(action=AuditAction.EXPORT, module="accounts", actor=request.user,
                target=request.user, message="Export des données personnelles (RGPD)",
-               request=request)
+               severity=AuditSeverity.WARNING, confidential=True, request=request)
         resp = JsonResponse(payload, json_dumps_params={"ensure_ascii": False, "indent": 2})
         resp["Content-Disposition"] = 'attachment; filename="mes-donnees-wagadu-hub.json"'
         return resp
@@ -147,7 +147,7 @@ class TwoFactorView(APIView):
             user.save(update_fields=["is_2fa_enabled"])
             record(action=AuditAction.UPDATE, module="accounts", actor=user, target=user,
                    message="Activation de la 2FA", severity=AuditSeverity.WARNING,
-                   request=request)
+                   confidential=True, request=request)
             return Response({"detail": "2FA activée."})
         if step == "disable":
             code = request.data.get("code", "")
@@ -158,7 +158,7 @@ class TwoFactorView(APIView):
             user.save(update_fields=["is_2fa_enabled", "totp_secret"])
             record(action=AuditAction.UPDATE, module="accounts", actor=user, target=user,
                    message="Désactivation de la 2FA", severity=AuditSeverity.WARNING,
-                   request=request)
+                   confidential=True, notify_admins=True, request=request)
             return Response({"detail": "2FA désactivée."})
         return Response({"detail": "Étape inconnue."}, status=404)
 
@@ -210,6 +210,12 @@ class UserViewSet(viewsets.ModelViewSet):
         record(action=AuditAction.CREATE, module="accounts", actor=self.request.user,
                target=user, message=f"Création du compte {user.email}",
                request=self.request)
+        # Tout compte collaborateur figure dans l'effectif RH.
+        try:
+            from apps.hr.signals import ensure_employee_fiche
+            ensure_employee_fiche(user)
+        except Exception:  # pragma: no cover - la fiche pourra être créée à la main
+            pass
 
     def perform_update(self, serializer):
         self._guard_admin_target(
@@ -247,7 +253,8 @@ class UserViewSet(viewsets.ModelViewSet):
         set_password(target, new_password)
         record(action=AuditAction.UPDATE, module="accounts", actor=request.user,
                target=target, message="Réinitialisation du mot de passe par un administrateur",
-               severity=AuditSeverity.WARNING, request=request)
+               severity=AuditSeverity.WARNING, confidential=True, notify_admins=True,
+               request=request)
         return Response({"detail": "Mot de passe réinitialisé."})
 
     @action(detail=True, methods=["post"], url_path="unlock",

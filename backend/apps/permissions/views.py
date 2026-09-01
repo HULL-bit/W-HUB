@@ -119,7 +119,7 @@ class UserPermissionOverrideViewSet(
                 f"{override.get_effect_display()} « {override.permission.code} » "
                 f"à {target.email}"
             ),
-            severity=severity, request=self.request,
+            severity=severity, notify_admins=True, request=self.request,
         )
 
     @action(detail=True, methods=["post"])

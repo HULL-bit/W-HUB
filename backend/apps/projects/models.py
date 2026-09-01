@@ -129,3 +129,20 @@ class ProgressUpdate(models.Model):
 
     def __str__(self) -> str:
         return f"{self.project_id} — {self.date}"
+
+
+class ProjectDocument(models.Model):
+    """Lien entre un projet et un document de l'espace documentaire."""
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_documents")
+    document = models.OneToOneField("documents.Document", on_delete=models.CASCADE, related_name="+")
+    added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-added_at"]
+
+    def __str__(self) -> str:
+        return f"{self.project_id} · {self.document_id}"

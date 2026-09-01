@@ -63,7 +63,7 @@ def visible_tasks(user):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    filterset_fields = ["status", "priority", "assigned_department", "assigned_team", "parent"]
+    filterset_fields = ["status", "priority", "assigned_department", "assigned_team", "parent", "project"]
     search_fields = ["title", "description"]
     ordering_fields = ["due_at", "created_at", "priority"]
 
@@ -82,9 +82,20 @@ class TaskViewSet(viewsets.ModelViewSet):
         return TaskWriteSerializer if self.action in ("create", "update", "partial_update") else TaskSerializer
 
     def get_permissions(self):
-        if self.action in ("create", "destroy", "assign", "set_status", "decide", "duplicate"):
+        if self.action in ("create", "update", "partial_update", "destroy",
+                           "assign", "set_status", "decide", "duplicate"):
             return [IsAuthenticated(), ASSIGN()]
         return [IsAuthenticated()]
+
+    def _notify_project(self, task, verb):
+        if task.project_id:
+            from apps.projects.services import notify_project
+            notify_project(task.project, actor=self.request.user,
+                           title=f"{task.project.name} : tâche {verb}", body=task.title)
+
+    def perform_update(self, serializer):
+        task = serializer.save()
+        self._notify_project(task, "modifiée")
 
     def create(self, request, *args, **kwargs):
         serializer = TaskWriteSerializer(data=request.data)
@@ -100,12 +111,16 @@ class TaskViewSet(viewsets.ModelViewSet):
             assignee_users=list(User.objects.filter(id__in=assignee_ids)),
             team=team, department=department, label_ids=label_ids,
         )
+        self._notify_project(task, "ajoutée")
         return Response(TaskSerializer(task).data, status=201)
 
     def perform_destroy(self, instance):
-        if instance.created_by_id != self.request.user.id and not self.request.user.is_super_admin:
-            raise PermissionDenied("Seul le créateur peut supprimer la tâche.")
-        record(action=AuditAction.DELETE, module="tasks", actor=self.request.user,
+        u = self.request.user
+        if (instance.created_by_id != u.id and not u.is_super_admin
+                and not has_permission(u, "tasks.assign")):
+            raise PermissionDenied("Seul le créateur ou un responsable peut supprimer la tâche.")
+        self._notify_project(instance, "supprimée")
+        record(action=AuditAction.DELETE, module="tasks", actor=u,
                target=instance, target_repr=instance.title, message="Suppression de la tâche")
         instance.delete()
 

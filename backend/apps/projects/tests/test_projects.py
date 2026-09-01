@@ -78,3 +78,51 @@ def test_mine_filter(api, project, make_user):
     api.force_authenticate(project.lead)
     rows = api.get("/api/v1/projects/?mine=1").data["results"]
     assert {r["code"] for r in rows} == {"P-1"}
+
+
+def test_document_upload_links_and_notifies(api, project, make_user):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from apps.notifications.models import Notification
+
+    member = make_user("m@wagadu.africa", "employe")
+    project.members.add(member)
+    api.force_authenticate(project.lead)
+    f = SimpleUploadedFile("plan.txt", b"plan projet", content_type="text/plain")
+    res = api.post(f"/api/v1/projects/{project.id}/documents/", {"file": f, "title": "Plan"}, format="multipart")
+    assert res.status_code == 201
+    assert project.project_documents.count() == 1
+    detail = api.get(f"/api/v1/projects/{project.id}/").data
+    assert detail["documents"][0]["title"] == "Plan"
+    assert Notification.objects.filter(recipient=member, type="project").exists()
+
+
+def test_document_delete_requires_manage(api, project, make_user):
+    from apps.documents.models import Document
+    from apps.projects.models import ProjectDocument
+
+    doc = Document.objects.create(title="x", owner=project.lead)
+    link = ProjectDocument.objects.create(project=project, document=doc, added_by=project.lead)
+    emp = make_user("e2@wagadu.africa", "employe")
+    api.force_authenticate(emp)
+    assert api.delete(f"/api/v1/project-documents/{link.id}/").status_code == 403
+    api.force_authenticate(project.lead)
+    assert api.delete(f"/api/v1/project-documents/{link.id}/").status_code == 204
+
+
+def test_task_linked_to_project_notifies_members(api, project, make_user):
+    from apps.notifications.models import Notification
+
+    member = make_user("tm@wagadu.africa", "employe")
+    project.members.add(member)
+    api.force_authenticate(project.lead)
+    res = api.post(
+        "/api/v1/tasks/",
+        {"title": "Livrable projet", "project": project.id, "priority": "normal"},
+        format="json",
+    )
+    assert res.status_code == 201
+    assert res.data["project"] == project.id
+    assert Notification.objects.filter(recipient=member, type="project").exists()
+    detail = api.get(f"/api/v1/projects/{project.id}/").data
+    assert detail["tasks"][0]["title"] == "Livrable projet"

@@ -73,6 +73,10 @@ class Task(models.Model):
     assigned_team = models.ForeignKey(
         "organization.Team", on_delete=models.SET_NULL, null=True, blank=True
     )
+    project = models.ForeignKey(
+        "projects.Project", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="tasks",
+    )
     labels = models.ManyToManyField(TaskLabel, blank=True, related_name="tasks")
 
     parent = models.ForeignKey(

@@ -51,6 +51,10 @@ class AuditLogEntry(models.Model):
         help_text=_("Identité figée de l'auteur (survit à la suppression du compte)."),
     )
     actor_is_admin = models.BooleanField(default=False)
+    confidential = models.BooleanField(
+        default=False,
+        help_text=_("Entrée sensible : visible uniquement par le Super Administrateur."),
+    )
     module = models.CharField(max_length=50, db_index=True)
     action = models.CharField(max_length=32, choices=AuditAction.choices, db_index=True)
     severity = models.CharField(

@@ -35,10 +35,12 @@ class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
     def get_queryset(self):
         qs = AuditLogEntry.objects.select_related("actor").all()
         user = self.request.user
-        if not getattr(user, "is_super_admin", False) and not has_permission(
-            user, "audit.view_admin_actions"
-        ):
-            qs = qs.exclude(actor_is_admin=True)
+        is_super = getattr(user, "is_super_admin", False)
+        if not is_super:
+            # Entrées confidentielles : Super Administrateur uniquement.
+            qs = qs.exclude(confidential=True)
+            if not has_permission(user, "audit.view_admin_actions"):
+                qs = qs.exclude(actor_is_admin=True)
         return qs
 
     @action(detail=False, methods=["get"])
