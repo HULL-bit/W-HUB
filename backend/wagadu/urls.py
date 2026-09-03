@@ -32,7 +32,8 @@ api_v1 = [
 ]
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    # /admin/* est réservé aux pages de l'app Next ; l'admin Django est isolé.
+    path("django-admin/", admin.site.urls),
     path("api/v1/", include((api_v1, "api"), namespace="v1")),
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

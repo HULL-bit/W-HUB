@@ -43,3 +43,4 @@ infra/nginx/certs/*
 *.pid
 wagadu-agenda.ics
 /*.ics
+infra/backups/
