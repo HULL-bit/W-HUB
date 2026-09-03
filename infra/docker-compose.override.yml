@@ -1,17 +1,16 @@
-# Surcharge de développement local : hot-reload, ports exposés, settings dev.
-# Chargée automatiquement par `docker compose` en plus de docker-compose.yml.
+# Surcharge de développement local — chargée automatiquement par `docker compose`.
 #
-#   cd infra && cp .env.example .env      # (déjà fait ? sinon, le faire)
-#   docker compose up -d --build
+#   cd infra && cp .env.example .env      # puis ajuster si besoin
+#   docker compose up -d
 #   docker compose exec backend python manage.py createsuperadmin
+#   docker compose exec backend python manage.py seed_demo   # (jeu de démo)
 #
-# Front : http://localhost:3000   API : http://localhost:8000/api/v1
-# (Nginx sur http://localhost sert aussi l'ensemble.)
+#   Front direct : http://localhost:3000    API : http://localhost:8000/api/v1
+#   Tout-en-un   : http://localhost         (Caddy en HTTP)
 services:
-  # Nginx en HTTP simple pour le dev (la config prod exige des certificats TLS).
-  nginx:
+  caddy:
     volumes:
-      - ./nginx/dev:/etc/nginx/conf.d:ro
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
 
   backend:
     build: ../backend
@@ -32,8 +31,6 @@ services:
       context: ../frontend
     environment:
       NODE_ENV: development
-      # Chemin relatif : fonctionne via Nginx (http://localhost) ET via le
-      # rewrite Next (http://localhost:3000, proxifié vers INTERNAL_API_URL).
       NEXT_PUBLIC_API_BASE_URL: /api/v1
       INTERNAL_API_URL: http://backend:8000
       WATCHPACK_POLLING: "true"
@@ -42,7 +39,6 @@ services:
       - /app/node_modules
       - /app/.next
     entrypoint: []
-    # npm ci : n'altère jamais package-lock.json (contrairement à npm install)
     command: sh -c "npm ci --prefer-offline --no-audit || npm install --no-save; npm run dev"
     ports:
       - "3000:3000"
@@ -60,7 +56,6 @@ services:
       USE_SQLITE: "0"
     volumes:
       - ../backend:/app
-    # laisse le backend appliquer les migrations avant de démarrer le scheduler
     command: >
       sh -c "sleep 12 &&
              celery -A wagadu beat -l info

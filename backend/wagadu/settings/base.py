@@ -147,8 +147,11 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Fichiers utilisateurs : MinIO (S3) dès qu'une clé d'accès est configurée,
-# stockage disque local sinon (développement).
+# Fichiers utilisateurs : stockage objet S3-compatible (Cloudflare R2 en prod)
+# dès qu'une clé d'accès est fournie ; disque local sinon (développement).
+# Les variables gardent le préfixe MINIO_ pour compat historique ; pour R2 :
+#   MINIO_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+#   MINIO_REGION=auto   MINIO_USE_SSL=1
 if env("MINIO_ACCESS_KEY"):
     _default_storage = {
         "BACKEND": "storages.backends.s3.S3Storage",
@@ -157,13 +160,18 @@ if env("MINIO_ACCESS_KEY"):
             "endpoint_url": env("MINIO_ENDPOINT", "http://minio:9000"),
             "access_key": env("MINIO_ACCESS_KEY"),
             "secret_key": env("MINIO_SECRET_KEY"),
-            "region_name": env("MINIO_REGION", "us-east-1"),
-            "use_ssl": env_bool("MINIO_USE_SSL", False),
+            "region_name": env("MINIO_REGION", "auto"),
+            "use_ssl": env_bool("MINIO_USE_SSL", True),
             "addressing_style": "path",
             "file_overwrite": False,
             "querystring_auth": True,
+            "signature_version": "s3v4",
         },
     }
+    # URL publique fixe si un domaine personnalisé R2 est branché (bucket public) :
+    if env("MEDIA_PUBLIC_DOMAIN"):
+        _default_storage["OPTIONS"]["custom_domain"] = env("MEDIA_PUBLIC_DOMAIN")
+        _default_storage["OPTIONS"]["querystring_auth"] = False
 else:
     _default_storage = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
 
